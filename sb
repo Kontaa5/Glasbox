@@ -13,9 +13,10 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # Code (Repo-Ordner oder i
 NAME=keepway
 IMAGE=keepway:local
 BASE=lscr.io/linuxserver/brave:latest
-# Kein Port am Mac: OrbStack erreicht den Container direkt unter <name>.orb.local
-# (nur von diesem Mac aus, nicht aus dem Netzwerk).
-URL="http://${NAME}.orb.local"
+# Port nur auf 127.0.0.1: nur von diesem Mac erreichbar, nicht aus WLAN/Internet.
+# (keepway.orb.local ginge ohne Port, wird aber von VPNs blockiert.) 1111 statt 3000 wegen Next & Co.
+PORT=1111
+URL="http://127.0.0.1:${PORT}"
 # Alle Daten (Einstellungen, Schlüssel, Build, Fenster-Profil) bewusst NICHT im Code-Ordner:
 # liegt der auf dem Schreibtisch/in Dokumenten, verlangt macOS Ordnerzugriff. Library braucht keine Freigabe.
 LAUFZEIT="$HOME/Library/Application Support/Keepway"
@@ -43,6 +44,7 @@ frage() {
   else
     [ "$(osascript - "$1" <<'AS' 2>/dev/null
 on run argv
+  activate
   display dialog (item 1 of argv) with title "Keepway" buttons {"Nein", "Ja"} default button "Ja"
   return button returned of result
 end run
@@ -55,6 +57,7 @@ meldung() {
   [ -n "$APP_MODUS" ] || return 0
   osascript - "$1" <<'AS' >/dev/null 2>&1 || true
 on run argv
+  activate
   display dialog (item 1 of argv) with title "Keepway" buttons {"OK"} default button "OK"
 end run
 AS
@@ -164,21 +167,22 @@ PY
 }
 
 oeffne_fenster() {
-  for _ in $(seq 1 60); do
-    curl -fs -o /dev/null "$URL/" && break
+  local bereit=""
+  for _ in $(seq 1 45); do
+    laeuft || fehler "Der Keepway-Container wurde unerwartet beendet. Bitte neu starten."
+    if curl -fs --max-time 2 -o /dev/null "$URL/"; then bereit=1; break; fi
     sleep 1
   done
+  [ -n "$bereit" ] || fehler "Keepway antwortet nicht (Details: ./sb log)."
   [ -d "/Applications/Brave Browser.app" ] || fehler "Brave fehlt am Mac – Keepway braucht Brave für das Fenster."
   zuschauer_profil
   # Eigenes Profil (keine Erweiterungen, keine Cookies deiner anderen Seiten), kein Schlüsselbund.
-  # Alles außer keepway.orb.local läuft auf einen toten Proxy -> das Fenster kann nur mit dem Container
-  # reden, nicht mit deinen localhost-Apps (Next, pgAdmin …) und nicht ins Internet.
-  # keepway.orb.local ist http -> für den Bildstream (WebCodecs) als sicherer Kontext markiert.
+  # Alles außer 127.0.0.1:PORT läuft auf einen toten Proxy -> das Fenster kann nur mit dem Container
+  # reden, nicht mit deinen anderen localhost-Apps (Next, pgAdmin …) und nicht ins Internet.
   open -na "Brave Browser" --args \
     --user-data-dir="$ZUSCHAUER" --use-mock-keychain \
     --no-first-run --no-default-browser-check --disable-extensions --disable-sync \
-    --proxy-server="http://127.0.0.1:9" --proxy-bypass-list="<-loopback>;${NAME}.orb.local" \
-    --unsafely-treat-insecure-origin-as-secure="$URL" \
+    --proxy-server="http://127.0.0.1:9" --proxy-bypass-list="<-loopback>;127.0.0.1:${PORT}" \
     --app="$URL/"
   gruen "✓ Fenster geöffnet"
 }
@@ -213,6 +217,7 @@ start() {
   [[ "$tz" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$ ]] || tz=UTC
 
   docker run -d --rm --name "$NAME" --hostname "$NAME" \
+    -p "127.0.0.1:${PORT}:3000" \
     --label keepway.modus="$modus" \
     --shm-size=1g --memory="${ram}g" --cpus="$cpu" --pids-limit=4096 \
     --security-opt no-new-privileges \
@@ -271,6 +276,7 @@ status() {
 auswahl() {
   osascript - "$@" <<'AS' 2>/dev/null || true
 on run argv
+  activate
   display dialog (item 1 of argv) with title "Keepway" buttons {item 2 of argv, item 3 of argv, item 4 of argv} default button (item 4 of argv) cancel button (item 2 of argv)
   return button returned of result
 end run

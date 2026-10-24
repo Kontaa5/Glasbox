@@ -22,4 +22,4 @@ cp "$ROOT/icon/keepway-512.png" "$CODE/icon/"
 find "$CODE" -name '__pycache__' -prune -exec rm -rf {} +
 chmod 755 "$APP/Contents/MacOS/Keepway" "$CODE/sb"
 codesign --force --sign - "$APP" 2>/dev/null
-echo "✓ Keepway.app gebaut – zum Benutzen nach „Programme“ ziehen (oder hier lassen, wenn der Ordner nicht geschützt ist)"
+echo "✓ Keepway.app gebaut"

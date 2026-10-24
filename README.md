@@ -35,14 +35,14 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 
 1. [OrbStack](https://orbstack.dev) und [Brave](https://brave.com) installieren.
 2. Repo klonen, in den Ordner wechseln.
-3. `./baue-app.sh` – erzeugt **Keepway.app**. Die App nach **„Programme“** ziehen.
+3. `./baue-app.sh` – erzeugt **Keepway.app** (kann im Ordner bleiben oder nach „Programme“).
 4. Keepway.app starten. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
    danach startet alles lokal in Sekunden.
 
 Die App ist eigenständig: der Code steckt in der App, alle Daten liegen in
 `~/Library/Application Support/Keepway` (Einstellungen, Schlüssel, Fenster-Profil).
-Deshalb braucht Keepway **keinen Zugriff auf Schreibtisch, Dokumente oder Downloads** –
-liegt die App selbst im Schreibtisch- oder Dokumente-Ordner, blockiert macOS sie, darum „Programme“.
+Deshalb braucht Keepway **keinen Zugriff auf Schreibtisch, Dokumente oder Downloads**.
+Die App startet Keepway im Hintergrund und beendet sich sofort wieder.
 
 Beim ersten Start erzeugt Keepway einen **eigenen Signierschlüssel** für seine Erweiterung
 (nur in Library, nie im Repo). Jede Installation hat dadurch eine andere Erweiterungs-ID –
@@ -108,7 +108,7 @@ deine Einstellungen und das leere Fenster-Profil in Library.
 ┌──────────────────────────────┐            ┌───────────────────────────────────────────┐
 │ Keepway-Fenster              │  Bild +    │ Container „keepway“ (frisch bei jedem Start)│
 │ (eigenes Brave-Profil,       │◀─ Ton ─────│  Brave + Keepway-Erweiterung               │
-│  kann NUR keepway.orb.local) │── Maus/ ──▶│  Firewall: lokales Netz gesperrt          │
+│  kann NUR 127.0.0.1:1111)    │── Maus/ ──▶│  Firewall: lokales Netz gesperrt          │
 │                              │   Tasten   │  ──▶ Internet (über dein VPN)              │
 └──────────────────────────────┘            └───────────────────────────────────────────┘
 ```
@@ -119,7 +119,8 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
 
 1. **Linux-VM** (OrbStack, Apple Virtualization) – der Container läuft nicht direkt auf macOS.
 2. **Container ohne Ordner vom Mac** – nur zwei Einstellungsdateien, schreibgeschützt.
-3. **Kein Port am Mac** – erreichbar nur über `keepway.orb.local`, nur von diesem Mac.
+3. **Port nur auf `127.0.0.1:1111`** – nur von diesem Mac erreichbar, nicht aus WLAN oder Internet
+   (1111 statt 3000, damit es nicht mit Next & Co. kollidiert). Funktioniert mit und ohne VPN.
    Fremde Webseiten werden von der Oberfläche abgewiesen (Origin-Prüfung).
 4. **Brave-Sandbox an** (im Basis-Image aus): Namespace + seccomp. Fehlt sie, startet Brave nicht.
 5. **Container gehärtet**: fast alle Linux-Rechte entfernt, `no-new-privileges`, kein sudo, kein Terminal,
@@ -128,7 +129,7 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
    Ohne aktive Firewall startet Brave nicht.
 7. **Abgeriegeltes Fenster**: eigenes Brave-Profil (in `~/Library/Application Support/Keepway`),
    ohne Erweiterungen, ohne Schlüsselbund – dein normales Brave wird nicht angefasst.
-   Alles außer `keepway.orb.local` geht auf einen toten Proxy – das Fenster erreicht weder das
+   Alles außer `127.0.0.1:1111` geht auf einen toten Proxy – das Fenster erreicht weder das
    Internet noch deine localhost-Apps. Darum **immer über `./sb` öffnen, nicht in einem normalen Tab**.
 8. **Zwischenablage nur Mac → Container** und nur über das Feld in der Seitenleiste.
    Kein Datei-Transfer, keine Teilen-Links, kein Mikro, keine Kamera.
@@ -147,7 +148,7 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
   können dort laufen (im Container).
 - CPU pro Seite ist eine Schätzung (gemessen wird der ganze Browser, während die Seite sichtbar ist).
 - Kein VPN-Kill-Switch: fällt das VPN aus, geht der Verkehr über deine normale Leitung.
-- Programme auf deinem Mac selbst können `keepway.orb.local` erreichen (aber nichts aus dem Netzwerk).
+- Programme auf deinem Mac selbst können `127.0.0.1:1111` erreichen (aber nichts aus dem Netzwerk).
 
 ## Projektaufbau
 
