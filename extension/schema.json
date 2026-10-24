@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "properties": {
+    "lesezeichen": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "heim_provider": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "erlaubte_weiterleitungen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cpu_warnung_prozent": {
+      "type": "integer"
+    },
+    "cpu_limit": {
+      "type": "integer"
+    },
+    "labor": {
+      "type": "boolean"
+    }
+  }
+}

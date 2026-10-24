@@ -1,0 +1,81 @@
+{
+  "PrintingEnabled": false,
+  "ScreenCaptureAllowed": false,
+  "AudioCaptureAllowed": false,
+  "VideoCaptureAllowed": false,
+  "PasswordManagerEnabled": false,
+  "AutofillAddressEnabled": false,
+  "AutofillCreditCardEnabled": false,
+  "PaymentMethodQueryEnabled": false,
+  "BrowserSignin": 0,
+  "SyncDisabled": true,
+  "BlockThirdPartyCookies": true,
+  "DefaultCookiesSetting": 4,
+  "DefaultPopupsSetting": 2,
+  "DefaultNotificationsSetting": 2,
+  "DefaultGeolocationSetting": 2,
+  "DefaultSensorsSetting": 2,
+  "DefaultClipboardSetting": 2,
+  "DefaultWebUsbGuardSetting": 2,
+  "DefaultSerialGuardSetting": 2,
+  "DefaultWebHidGuardSetting": 2,
+  "DefaultWebBluetoothGuardSetting": 2,
+  "DefaultFileSystemReadGuardSetting": 2,
+  "DefaultFileSystemWriteGuardSetting": 2,
+  "DefaultLocalFontsSetting": 2,
+  "DefaultWindowManagementSetting": 2,
+  "DefaultIdleDetectionSetting": 2,
+  "HttpsOnlyMode": "force_enabled",
+  "WebRtcIPHandling": "disable_non_proxied_udp",
+  "SafeBrowsingProtectionLevel": 1,
+  "BackgroundModeEnabled": false,
+  "MetricsReportingEnabled": false,
+  "ExtensionInstallBlocklist": [
+    "*"
+  ],
+  "ExtensionInstallAllowlist": [
+    "__EXT_ID__"
+  ],
+  "BraveRewardsDisabled": true,
+  "BraveWalletDisabled": true,
+  "BraveVPNDisabled": true,
+  "BraveAIChatEnabled": false,
+  "BraveNewsDisabled": true,
+  "BraveTalkDisabled": true,
+  "TorDisabled": true,
+  "ExtensionInstallForcelist": [
+    "__EXT_ID__;file:///opt/sb-crx/updates.xml"
+  ],
+  "BraveP3AEnabled": false,
+  "BraveStatsPingEnabled": false,
+  "BraveWebDiscoveryEnabled": false,
+  "TranslateEnabled": false,
+  "ExtensionSettings": {
+    "__EXT_ID__": {
+      "toolbar_pin": "force_pinned"
+    }
+  },
+  "DefaultJavaScriptJitSetting": 2,
+  "DefaultJavaScriptOptimizerSetting": 2,
+  "LocalNetworkAccessBlockedForUrls": [
+    "*"
+  ],
+  "DefaultDirectSocketsSetting": 2,
+  "AlwaysOpenPdfExternally": true,
+  "BlockExternalExtensions": true,
+  "BrowserGuestModeEnabled": false,
+  "BrowserAddPersonEnabled": false,
+  "SitePerProcess": true,
+  "XSLTEnabled": false,
+  "Disable3DAPIs": true,
+  "SSLErrorOverrideAllowed": false,
+  "WebAppInstallByUserEnabled": false,
+  "ExternalProtocolDialogShowAlwaysOpenCheckbox": false,
+  "NetworkServiceSandboxEnabled": true,
+  "LoopbackNetworkBlockedForUrls": [
+    "*"
+  ],
+  "LocalNetworkBlockedForUrls": [
+    "*"
+  ]
+}

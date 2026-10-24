@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Neuer Tab – Keepway</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="newtab.js"></script>
+</head>
+<body>
+  <header>
+    <div class="marke"><img class="logo" src="icons/icon32.png" alt="">Keepway</div>
+    <form id="suche" autocomplete="off">
+      <input id="q" type="search" placeholder="Suchen mit Brave Search oder Adresse eingeben" autofocus>
+    </form>
+  </header>
+
+  <main>
+    <section class="karte breit labor" id="labor" hidden>
+      <h2>🧪 Labor-Modus</h2>
+      <p>Downloads und Dateiauswahl sind erlaubt – aber nur hier im Container. Nichts davon kommt auf deinen Mac,
+        beim Beenden (<code>./sb stop</code>) wird alles gelöscht.</p>
+    </section>
+
+    <section class="karte breit" id="ip-karte">
+      <div class="kopf"><h2>Deine IP</h2><button id="ip-neu" class="klein">Neu prüfen</button></div>
+      <div class="ip-zeile">
+        <div id="ip" class="gross">…</div>
+        <div id="ip-status" class="status">prüfe…</div>
+      </div>
+      <div id="ip-details" class="leise"></div>
+    </section>
+
+    <section class="karte">
+      <div class="kopf"><h2>Downloads</h2><span id="dl-zahl" class="zahl">0</span></div>
+      <p class="leise" id="dl-info">Downloads sind gesperrt. Hier stehen Versuche.</p>
+      <ul id="dl-liste" class="liste"></ul>
+    </section>
+
+    <section class="karte">
+      <div class="kopf"><h2>Uploads</h2><span id="ul-zahl" class="zahl">0</span></div>
+      <p class="leise">Kein Dateizugriff. Hier stehen Seiten, die es versucht haben.</p>
+      <ul id="ul-liste" class="liste"></ul>
+    </section>
+
+    <section class="karte">
+      <div class="kopf"><h2>Weiterleitungen blockiert</h2><span id="wl-zahl" class="zahl">0</span></div>
+      <ul id="wl-liste" class="liste"></ul>
+    </section>
+
+    <section class="karte breit">
+      <div class="kopf"><h2>Leistung pro Seite</h2><button id="perf-ok" class="klein">Warnung quittieren</button></div>
+      <p class="leise">CPU des Browsers, während die Seite sichtbar war. Viele Worker + WebAssembly + hohe CPU = Verdacht auf Mining.</p>
+      <table>
+        <thead><tr><th>Seite</th><th>Ø CPU</th><th>Max</th><th>Worker</th><th>WASM</th><th>Status</th></tr></thead>
+        <tbody id="perf-liste"></tbody>
+      </table>
+    </section>
+
+    <section class="karte breit">
+      <div class="kopf"><h2>Lesezeichen</h2></div>
+      <div id="lz-liste" class="kacheln"></div>
+      <p class="leise">Feste Lesezeichen kommen aus <code>einstellungen.json</code> am Mac. Lesezeichen aus dieser Sitzung verschwinden beim Beenden.</p>
+    </section>
+  </main>
+</body>
+</html>

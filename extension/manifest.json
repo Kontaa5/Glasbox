@@ -1,0 +1,74 @@
+{
+  "manifest_version": 3,
+  "name": "Keepway Wächter",
+  "version": "1.0.0",
+  "description": "Neuer Tab mit IP, Downloads, Uploads, Weiterleitungen und CPU-Verbrauch pro Seite.",
+  "key": "__EXT_KEY__ (wird von docker/vorbereiten.py pro Klon eingesetzt)",
+  "permissions": [
+    "storage",
+    "downloads",
+    "webNavigation",
+    "tabs",
+    "bookmarks",
+    "system.cpu"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Keepway – Übersicht",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "main-world.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN",
+      "match_origin_as_fallback": true,
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_origin_as_fallback": true,
+      "match_about_blank": true
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; img-src 'self'; connect-src 'self' https://ipinfo.io https://api.ipify.org"
+  },
+  "storage": {
+    "managed_schema": "schema.json"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

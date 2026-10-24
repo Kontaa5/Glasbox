@@ -1,0 +1,27 @@
+#!/bin/bash
+# Ersetzt das Original aus linuxserver/brave: OHNE --no-sandbox.
+# Die eigene Erweiterung kommt per Richtlinie (ExtensionInstallForcelist).
+
+BIN=/usr/bin/brave-browser
+
+# Fail-closed: ohne aktive Firewall kein Browser
+if [ ! -f /run/sb-firewall-ok ]; then
+  echo "[Keepway] Firewall nicht aktiv – Brave startet nicht" >&2
+  exit 1
+fi
+
+if pgrep brave > /dev/null; then
+  rm -f "$HOME"/.config/BraveSoftware/Brave-Browser/Singleton*
+fi
+
+if [ "${PIXELFLUX_WAYLAND,,}" == "true" ]; then
+  WAYLAND="--ozone-platform=wayland"
+fi
+
+exec ${BIN} \
+  --no-first-run \
+  --password-store=basic \
+  --simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT' \
+  --start-maximized \
+  ${WAYLAND} \
+  "$@" > /dev/null 2>&1

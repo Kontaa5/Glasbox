@@ -1,0 +1,6 @@
+# privat / lokal
+docker/keys/
+.laufzeit/
+einstellungen.json
+.DS_Store
+__pycache__/

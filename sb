@@ -1,0 +1,289 @@
+#!/bin/bash
+# Keepway – Brave im Wegwerf-Container
+#   ./sb          starten (oder Fenster öffnen, falls er läuft)
+#   ./sb labor    starten im Labor-Modus: Downloads/Dateiauswahl erlaubt, aber nur im Container
+#   ./sb stop     beenden – alles im Container wird gelöscht
+#   ./sb update   neue Brave-Version laden und Image neu bauen
+#   ./sb status   läuft er? wie alt ist Brave?
+#   ./sb log      Container-Log
+set -euo pipefail
+umask 077   # alles in .laufzeit nur für dich lesbar
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NAME=keepway
+IMAGE=keepway:local
+BASE=lscr.io/linuxserver/brave:latest
+# Kein Port am Mac: OrbStack erreicht den Container direkt unter <name>.orb.local
+# (nur von diesem Mac aus, nicht aus dem Netzwerk).
+URL="http://${NAME}.orb.local"
+LAUFZEIT="$DIR/.laufzeit"
+# Eigenes Brave-Profil nur für das Fenster – bewusst NICHT im Projektordner: liegt der auf dem
+# Schreibtisch/in Dokumenten, fragt macOS Brave nach Ordnerzugriff. So braucht es keine Freigabe.
+ZUSCHAUER="$HOME/Library/Application Support/Keepway/zuschauer"
+APP_MODUS=""                         # gesetzt bei ./sb app (ohne Terminal -> Dialoge)
+
+rot()   { printf '\033[31m%s\033[0m\n' "$*"; }
+gruen() { printf '\033[32m%s\033[0m\n' "$*"; }
+gelb()  { printf '\033[33m%s\033[0m\n' "$*"; }
+
+# Ja/Nein-Frage: im Terminal per read, aus der App als macOS-Dialog.
+# Der Text wird als Argument übergeben, nie in das AppleScript eingebaut.
+frage() {
+  if [ -t 0 ]; then
+    local a
+    read -r -p "$1 [j/N] " a
+    [[ "$a" =~ ^[jJyY]$ ]]
+  else
+    [ "$(osascript - "$1" <<'AS' 2>/dev/null
+on run argv
+  display dialog (item 1 of argv) with title "Keepway" buttons {"Nein", "Ja"} default button "Ja"
+  return button returned of result
+end run
+AS
+)" = "Ja" ]
+  fi
+}
+
+meldung() {
+  [ -n "$APP_MODUS" ] || return 0
+  osascript - "$1" <<'AS' >/dev/null 2>&1 || true
+on run argv
+  display dialog (item 1 of argv) with title "Keepway" buttons {"OK"} default button "OK"
+end run
+AS
+}
+
+fehler() { rot "$1"; meldung "$1"; exit 1; }
+
+docker_bereit() {
+  docker info >/dev/null 2>&1 && return 0
+  echo "Starte OrbStack…"
+  open -ga OrbStack
+  for _ in $(seq 1 60); do
+    docker info >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  fehler "Docker/OrbStack antwortet nicht."
+}
+
+laeuft() { [ "$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)" = "true" ]; }
+
+vpn_check() {
+  local iface
+  iface=$(route -n get default 2>/dev/null | awk '/interface:/ {print $2}')
+  case "$iface" in
+    utun*|ipsec*|ppp*|tun*|wg*) gruen "✓ VPN erkannt (Standardroute über $iface)";;
+    *)
+      rot "⚠ Kein VPN erkannt (Standardroute über ${iface:-?}). Deine echte IP wäre sichtbar."
+      if [ "${OHNE_VPN:-}" != 1 ]; then
+        frage "Kein VPN erkannt – deine echte IP wäre sichtbar. Trotzdem starten?" || exit 1
+      fi;;
+  esac
+}
+
+build_hash() {
+  (cd "$DIR" && find .laufzeit/build docker/Dockerfile docker/wrapped-brave docker/firewall.sh icon/keepway-512.png \
+     -type f -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -c1-16)
+}
+
+baue() {
+  echo "Baue Image (lokal, ohne Download)…"
+  docker build -q --build-arg BASE="$BASE" --label keepway.hash="$(build_hash)" \
+    -f "$DIR/docker/Dockerfile" -t "$IMAGE" "$DIR" >/dev/null
+  gruen "✓ Image gebaut"
+}
+
+image_aktuell() {
+  local ist
+  ist=$(docker image inspect -f '{{index .Config.Labels "keepway.hash"}}' "$IMAGE" 2>/dev/null || true)
+  [ "$(build_hash)" = "$ist" ]
+}
+
+alter_tage() {
+  local erstellt
+  erstellt=$(docker image inspect -f '{{.Created}}' "$BASE" 2>/dev/null | cut -c1-10)
+  [ -n "$erstellt" ] || { echo 0; return; }
+  echo $(( ( $(date +%s) - $(date -j -f %Y-%m-%d "$erstellt" +%s) ) / 86400 ))
+}
+
+# Neue Brave-Version holen: lädt nur geänderte Teile, baut lokal neu.
+update() {
+  docker_bereit
+  mkdir -p "$LAUFZEIT"
+  local vorher
+  vorher=$(docker image inspect -f '{{.Id}}' "$BASE" 2>/dev/null || true)
+  echo "Suche neue Brave-Version…"
+  docker pull -q "$BASE" >/dev/null
+  date +%s > "$LAUFZEIT/update-geprueft"
+  if [ "$vorher" = "$(docker image inspect -f '{{.Id}}' "$BASE")" ]; then
+    gruen "✓ Brave ist aktuell"
+    return
+  fi
+  python3 -I "$DIR/docker/vorbereiten.py" "$DIR" normal >/dev/null
+  baue
+  gruen "✓ Neue Version: $(docker image inspect -f '{{index .Config.Labels "build_version"}}' "$BASE" | head -1)"
+  if laeuft; then gelb "Läuft noch mit alter Version – ./sb stop und neu starten."; fi
+}
+
+# Einmal pro Woche beim Start nachfragen
+woechentlich_fragen() {
+  local zuletzt=0
+  [ -f "$LAUFZEIT/update-geprueft" ] && zuletzt=$(cat "$LAUFZEIT/update-geprueft")
+  [[ "$zuletzt" =~ ^[0-9]+$ ]] || zuletzt=0
+  [ $(( $(date +%s) - zuletzt )) -gt $(( 7 * 86400 )) ] || return 0
+  if frage "Nach neuer Brave-Version suchen? (Brave ist $(alter_tage) Tage alt, lädt nur Änderungen)"; then
+    update
+  else
+    date +%s > "$LAUFZEIT/update-geprueft"
+  fi
+}
+
+zuschauer_profil() {
+  [ -d "$ZUSCHAUER/Default" ] && return 0
+  mkdir -p "$ZUSCHAUER/Default" "$ZUSCHAUER-downloads"
+  # Downloads nur mit Nachfrage, keine Benachrichtigungen/Kamera/Mikro/Standort/Zwischenablage-Lesen
+  python3 -I - "$ZUSCHAUER/Default/Preferences" "$ZUSCHAUER-downloads" <<'PY'
+import json, sys
+nein = 2
+json.dump({
+    "download": {"prompt_for_download": True, "default_directory": sys.argv[2], "directory_upgrade": True},
+    "profile": {"default_content_setting_values": {
+        "notifications": nein, "geolocation": nein, "media_stream_camera": nein,
+        "media_stream_mic": nein, "clipboard": nein, "automatic_downloads": nein, "popups": nein,
+        "midi_sysex": nein, "usb_guard": nein, "serial_guard": nein, "hid_guard": nein,
+        "bluetooth_guard": nein, "file_system_write_guard": nein, "local_network_access": nein}},
+    "brave": {"p3a": {"enabled": False}, "stats": {"reporting_enabled": False}},
+}, open(sys.argv[1], "w"))
+PY
+}
+
+oeffne_fenster() {
+  for _ in $(seq 1 60); do
+    curl -fs -o /dev/null "$URL/" && break
+    sleep 1
+  done
+  [ -d "/Applications/Brave Browser.app" ] || fehler "Brave fehlt am Mac – Keepway braucht Brave für das Fenster."
+  zuschauer_profil
+  # Eigenes Profil (keine Erweiterungen, keine Cookies deiner anderen Seiten), kein Schlüsselbund.
+  # Alles außer keepway.orb.local läuft auf einen toten Proxy -> das Fenster kann nur mit dem Container
+  # reden, nicht mit deinen localhost-Apps (Next, pgAdmin …) und nicht ins Internet.
+  # keepway.orb.local ist http -> für den Bildstream (WebCodecs) als sicherer Kontext markiert.
+  open -na "Brave Browser" --args \
+    --user-data-dir="$ZUSCHAUER" --use-mock-keychain \
+    --no-first-run --no-default-browser-check --disable-extensions --disable-sync \
+    --proxy-server="http://127.0.0.1:9" --proxy-bypass-list="<-loopback>;${NAME}.orb.local" \
+    --unsafely-treat-insecure-origin-as-secure="$URL" \
+    --app="$URL/"
+  gruen "✓ Fenster geöffnet"
+}
+
+start() {
+  local modus="$1"
+  mkdir -p "$LAUFZEIT"
+  chmod 700 "$LAUFZEIT"
+  docker_bereit
+  if laeuft; then
+    local aktiv
+    aktiv=$(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME")
+    [ "$aktiv" = "$modus" ] || fehler "Keepway läuft schon im Modus „$aktiv“. Erst ./sb stop, dann neu starten."
+    oeffne_fenster
+    return
+  fi
+  vpn_check
+  if ! docker image inspect "$BASE" >/dev/null 2>&1; then
+    gelb "Brave-Image fehlt – einmaliger Download (~1,2 GB)."
+    docker pull "$BASE"
+    date +%s > "$LAUFZEIT/update-geprueft"
+  else
+    woechentlich_fragen
+  fi
+
+  local res cpu ram tz
+  res=$(python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$modus") || fehler "einstellungen.json fehlerhaft (Details oben bzw. in .laufzeit/app.log)."
+  cpu=${res% *}; ram=${res#* }
+  image_aktuell || baue
+  # Zeitzone vom Mac übernehmen (nichts Persönliches fest im Code)
+  tz=$(readlink /etc/localtime | sed 's#.*/zoneinfo/##')
+  [[ "$tz" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$ ]] || tz=UTC
+
+  docker run -d --rm --name "$NAME" --hostname "$NAME" \
+    --label keepway.modus="$modus" \
+    --shm-size=1g --memory="${ram}g" --cpus="$cpu" --pids-limit=4096 \
+    --security-opt no-new-privileges \
+    --security-opt seccomp="$DIR/docker/seccomp-brave.json" \
+    --cap-drop ALL \
+    --cap-add CHOWN --cap-add SETUID --cap-add SETGID --cap-add DAC_OVERRIDE \
+    --cap-add FOWNER --cap-add KILL --cap-add NET_ADMIN \
+    -e PUID=1000 -e PGID=1000 -e TZ="$tz" -e DISABLE_IPV6=true \
+    -e HARDEN_DESKTOP=true -e HARDEN_OPENBOX=true \
+    -e SELKIES_ENABLE_CLIPBOARD="in" \
+    -e SELKIES_CLIPBOARD_SEAMLESS="false|locked" \
+    -e SELKIES_ENABLE_BINARY_CLIPBOARD="false|locked" \
+    -e SELKIES_FILE_TRANSFERS=none \
+    -e SELKIES_PRINTING_ENABLED="false|locked" \
+    -e SELKIES_ENABLE_SHARING="false|locked" \
+    -e SELKIES_MICROPHONE_ENABLED="false|locked" \
+    -e SELKIES_WEBCAM_ENABLED="false|locked" \
+    -e SELKIES_GAMEPAD_ENABLED="false|locked" \
+    -e SELKIES_COMMAND_ENABLED="false|locked" \
+    -e SELKIES_ALLOWED_ORIGINS="$URL" \
+    -e SELKIES_UI_SIDEBAR_SHOW_FILES="false|locked" \
+    -e SELKIES_UI_SIDEBAR_SHOW_APPS="false|locked" \
+    -e SELKIES_UI_SIDEBAR_SHOW_SHARING="false|locked" \
+    -e SELKIES_UI_SIDEBAR_SHOW_GAMEPADS="false|locked" \
+    -e SELKIES_UI_SIDEBAR_SHOW_WEBCAM="false|locked" \
+    -v "$LAUFZEIT/erweiterung.json:/etc/brave/policies/managed/erweiterung.json:ro" \
+    -v "$LAUFZEIT/modus.json:/etc/brave/policies/managed/modus.json:ro" \
+    "$IMAGE" >/dev/null
+  [ "$modus" = labor ] && gelb "🧪 Labor-Modus: Downloads erlaubt – bleiben im Container, beim Beenden gelöscht"
+  gruen "✓ Container gestartet (frisch, ohne Zugriff auf deine Dateien)"
+  oeffne_fenster
+}
+
+stop() {
+  docker_bereit
+  if ! laeuft; then echo "Läuft nicht."; return; fi
+  local n
+  n=$(docker exec "$NAME" sh -c 'find /config -path /config/.config -prune -o -type f \( -path "*/Downloads/*" -o -path "*/Desktop/*" \) -print 2>/dev/null | wc -l' || echo "?")
+  echo "Dateien in Downloads/Desktop des Containers: ${n// /} (werden jetzt gelöscht)"
+  docker stop "$NAME" >/dev/null
+  gruen "✓ Beendet – Container samt Verlauf, Cookies und Dateien gelöscht"
+}
+
+status() {
+  docker_bereit
+  if laeuft; then
+    gruen "läuft: $URL (Modus: $(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME"))"
+  else
+    echo "läuft nicht"
+  fi
+  docker image inspect -f 'Basis: {{index .Config.Labels "build_version"}}' "$BASE" 2>/dev/null | head -1 || true
+  echo "Brave-Image ist $(alter_tage) Tage alt"
+}
+
+# Aufruf aus Keepway.app (kein Terminal): läuft er schon, fragen ob beenden oder Fenster öffnen.
+app() {
+  APP_MODUS=1
+  trap 'meldung "Keepway: Fehler – Details in .laufzeit/app.log"' ERR
+  docker_bereit
+  if laeuft; then
+    if frage "Keepway läuft. Beenden und alles im Container löschen? (Nein = Fenster öffnen)"; then
+      stop
+    else
+      oeffne_fenster
+    fi
+  else
+    start normal
+  fi
+}
+
+case "${1:-start}" in
+  start) start normal;;
+  labor) start labor;;
+  stop) stop;;
+  update) update;;
+  status) status;;
+  app) app;;
+  log) docker logs --tail 80 "$NAME";;
+  *) sed -n '2,8p' "$0"; exit 1;;
+esac

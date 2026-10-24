@@ -1,0 +1,12 @@
+{
+  "lesezeichen": [
+    { "name": "Brave Search", "url": "https://search.brave.com" },
+    { "name": "VirusTotal", "url": "https://www.virustotal.com" },
+    { "name": "urlscan.io", "url": "https://urlscan.io" }
+  ],
+  "heim_provider": [],
+  "erlaubte_weiterleitungen": [],
+  "cpu_warnung_prozent": 70,
+  "cpu_kerne": 4,
+  "arbeitsspeicher_gb": 6
+}
