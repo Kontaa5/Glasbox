@@ -20,6 +20,13 @@ URL="http://${NAME}.orb.local"
 # liegt der auf dem Schreibtisch/in Dokumenten, verlangt macOS Ordnerzugriff. Library braucht keine Freigabe.
 LAUFZEIT="$HOME/Library/Application Support/Keepway"
 ZUSCHAUER="$LAUFZEIT/zuschauer"     # eigenes Brave-Profil nur für das Fenster
+# Eigene, leere Docker-Konfiguration: Keepway liest weder ~/.docker noch einen Schlüsselbund-Helfer
+# (dort steht oft "credsStore": "osxkeychain"). Für öffentliche Images braucht es keine Anmeldung.
+export DOCKER_CONFIG="$LAUFZEIT/docker"
+export DOCKER_HOST="unix://$HOME/.orbstack/run/docker.sock"
+mkdir -p "$DOCKER_CONFIG"
+# buildx (für docker build) kommt direkt aus OrbStack
+printf '{"cliPluginsExtraDirs": ["/Applications/OrbStack.app/Contents/MacOS/xbin"]}\n' > "$DOCKER_CONFIG/config.json"
 APP_MODUS=""                         # gesetzt bei ./sb app (ohne Terminal -> Dialoge)
 
 rot()   { printf '\033[31m%s\033[0m\n' "$*"; }
