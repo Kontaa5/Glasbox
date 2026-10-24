@@ -1,12 +1,15 @@
 """Bereitet einen Keepway-Start vor (aufgerufen von ./sb, läuft am Mac).
 
-1. Eigener Signierschlüssel pro Klon (docker/keys/extension.pem, nie im Repo)
+1. Eigener Signierschlüssel pro Installation (<daten>/keys/extension.pem, nie im Repo)
    -> eigene Erweiterungs-ID, nichts ist bei zwei Klonen gleich.
-2. Vorlagen mit dieser ID füllen -> .laufzeit/build/ (wird ins Image gebaut).
-3. einstellungen.json prüfen -> .laufzeit/erweiterung.json (Richtlinie für die Erweiterung)
-   und .laufzeit/modus.json (normal: Downloads gesperrt, labor: erlaubt).
+2. Vorlagen mit dieser ID füllen -> <daten>/build/ (Build-Kontext fürs Image, enthält alles Nötige).
+3. <daten>/einstellungen.json prüfen -> <daten>/erweiterung.json (Richtlinie für die Erweiterung)
+   und <daten>/modus.json (normal: Downloads gesperrt, labor: erlaubt).
 
-Aufruf: python3 -I docker/vorbereiten.py <projektordner> <normal|labor>
+<daten> = ~/Library/Application Support/Keepway – bewusst nicht im Code-Ordner, damit macOS
+keinen Zugriff auf Schreibtisch/Dokumente verlangen muss.
+
+Aufruf: python3 -I docker/vorbereiten.py <codeordner> <datenordner> <normal|labor>
 Ausgabe (stdout): "<cpu_kerne> <arbeitsspeicher_gb>"
 """
 import base64
@@ -18,14 +21,14 @@ import subprocess
 import sys
 from urllib.parse import urlparse
 
-ordner, modus = sys.argv[1], sys.argv[2]
+ordner, daten, modus = sys.argv[1], sys.argv[2], sys.argv[3]
 if modus not in ("normal", "labor"):
     sys.exit("Modus muss normal oder labor sein")
 
-keys = os.path.join(ordner, "docker", "keys")
+keys = os.path.join(daten, "keys")
 pem = os.path.join(keys, "extension.pem")
-laufzeit = os.path.join(ordner, ".laufzeit")
-build = os.path.join(laufzeit, "build")
+laufzeit = daten
+build = os.path.join(daten, "build")
 
 # --- 1. Schlüssel ---
 if not os.path.exists(pem):
@@ -50,9 +53,12 @@ manifest["key"] = ext_key
 json.dump(manifest, open(manifest_pfad, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 shutil.copy(pem, os.path.join(build, "extension.pem"))
 os.chmod(os.path.join(build, "extension.pem"), 0o600)
+for quelle_rel, ziel_name in (("docker/Dockerfile", "Dockerfile"), ("docker/wrapped-brave", "wrapped-brave"), ("docker/firewall.sh", "firewall.sh"),
+                              ("docker/seccomp-brave.json", "seccomp-brave.json"), ("icon/keepway-512.png", "icon.png")):
+    shutil.copy(os.path.join(ordner, quelle_rel), os.path.join(build, ziel_name))
 
 # --- 3. Einstellungen ---
-quelle = os.path.join(ordner, "einstellungen.json")
+quelle = os.path.join(daten, "einstellungen.json")
 if not os.path.exists(quelle):
     shutil.copy(os.path.join(ordner, "einstellungen.beispiel.json"), quelle)
 try:

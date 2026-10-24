@@ -35,11 +35,17 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 
 1. [OrbStack](https://orbstack.dev) und [Brave](https://brave.com) installieren.
 2. Repo klonen, in den Ordner wechseln.
-3. `./sb` ausführen. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
+3. `./baue-app.sh` – erzeugt **Keepway.app**. Die App nach **„Programme“** ziehen.
+4. Keepway.app starten. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
    danach startet alles lokal in Sekunden.
 
+Die App ist eigenständig: der Code steckt in der App, alle Daten liegen in
+`~/Library/Application Support/Keepway` (Einstellungen, Schlüssel, Fenster-Profil).
+Deshalb braucht Keepway **keinen Zugriff auf Schreibtisch, Dokumente oder Downloads** –
+liegt die App selbst im Schreibtisch- oder Dokumente-Ordner, blockiert macOS sie, darum „Programme“.
+
 Beim ersten Start erzeugt Keepway einen **eigenen Signierschlüssel** für seine Erweiterung
-(`docker/keys/`, nie im Repo). Jeder Klon hat dadurch eine andere Erweiterungs-ID –
+(nur in Library, nie im Repo). Jede Installation hat dadurch eine andere Erweiterungs-ID –
 nichts ist bei zwei Installationen gleich.
 
 ## Benutzung
@@ -53,11 +59,12 @@ nichts ist bei zwei Installationen gleich.
 ./sb log        # Container-Log
 ```
 
-Oder **Keepway.app** doppelklicken bzw. ins Dock ziehen. Läuft Keepway schon, fragt die App,
-ob du es beenden oder das Fenster öffnen willst. Die App muss im Keepway-Ordner bleiben
-(ins Dock ziehen geht, nach „Programme“ kopieren nicht).
+**Keepway.app** fragt beim Start: **Normal** oder **Labor**. Läuft Keepway schon:
+**Fenster öffnen** oder **Beenden + alles löschen**. Fragen (VPN, Updates) kommen als Dialog.
 
-Der Ordner funktioniert an jedem Ort – `./sb` findet seinen Pfad selbst.
+Im Terminal geht dasselbe mit `./sb` (der Repo-Ordner funktioniert an jedem Ort, `./sb` findet
+seinen Pfad selbst; er nutzt dieselben Daten in Library wie die App).
+Nach Code-Änderungen `./baue-app.sh` erneut ausführen und die App neu nach „Programme“ ziehen.
 
 ### Labor-Modus
 
@@ -77,8 +84,8 @@ Jederzeit manuell: `./sb update`.
 
 ### Einstellungen
 
-Beim ersten Start wird `einstellungen.json` aus `einstellungen.beispiel.json` angelegt
-(bleibt lokal, nicht im Repo):
+Beim ersten Start wird `~/Library/Application Support/Keepway/einstellungen.json` aus
+`einstellungen.beispiel.json` angelegt (bleibt lokal, nicht im Repo):
 
 | Feld | Bedeutung |
 |---|---|
@@ -87,6 +94,12 @@ Beim ersten Start wird `einstellungen.json` aus `einstellungen.beispiel.json` an
 | `erlaubte_weiterleitungen` | Ziel-Domains, auf die ohne Rückfrage weitergeleitet werden darf |
 | `cpu_warnung_prozent` | ab welchem Ø-Verbrauch eine Seite als „hoher Verbrauch“ markiert wird |
 | `cpu_kerne`, `arbeitsspeicher_gb` | Obergrenze für den Container (schützt den Mac vor Minern) |
+
+### Was beim Beenden gelöscht wird
+
+`Beenden` bzw. `./sb stop` löscht den Container **und** seinen Speicher (Verlauf, Cookies, Cache,
+heruntergeladene Dateien). Übrig bleiben nur: das Brave-Image (das Programm, ohne Surf-Daten),
+deine Einstellungen und das leere Fenster-Profil in Library.
 
 ## Wie es funktioniert
 
@@ -113,8 +126,8 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
    Speicher-/CPU-/Prozess-Limit, ungenutzte Weiterleitungen im Webserver entfernt.
 6. **Firewall im Container**: Router, NAS, der Mac und alles im lokalen Netz sind gesperrt.
    Ohne aktive Firewall startet Brave nicht.
-7. **Abgeriegeltes Fenster**: eigenes Brave-Profil (in `~/Library/Application Support/Keepway`,
-   damit macOS keinen Ordnerzugriff braucht), ohne Erweiterungen, ohne Schlüsselbund.
+7. **Abgeriegeltes Fenster**: eigenes Brave-Profil (in `~/Library/Application Support/Keepway`),
+   ohne Erweiterungen, ohne Schlüsselbund – dein normales Brave wird nicht angefasst.
    Alles außer `keepway.orb.local` geht auf einen toten Proxy – das Fenster erreicht weder das
    Internet noch deine localhost-Apps. Darum **immer über `./sb` öffnen, nicht in einem normalen Tab**.
 8. **Zwischenablage nur Mac → Container** und nur über das Feld in der Seitenleiste.
@@ -140,15 +153,15 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
 
 | Pfad | Inhalt |
 |---|---|
-| `sb` | Startskript |
-| `Keepway.app` | Starter fürs Dock |
+| `sb` | Startskript (auch in der App enthalten) |
+| `baue-app.sh` | baut Keepway.app (ohne Xcode) |
 | `docker/Dockerfile` | Image auf Basis von `lscr.io/linuxserver/brave` |
 | `docker/policies.json` | Brave-Richtlinien (Vorlage, ID wird pro Klon eingesetzt) |
-| `docker/vorbereiten.py` | Schlüssel erzeugen, Vorlagen füllen, Einstellungen prüfen |
+| `docker/vorbereiten.py` | Schlüssel erzeugen, Vorlagen füllen, Einstellungen prüfen, Build-Ordner in Library anlegen |
 | `docker/firewall.sh`, `docker/wrapped-brave` | Firewall, Brave-Start mit Sandbox |
 | `docker/seccomp-brave.json` | seccomp-Profil (aus `make-seccomp.py` + Docker-Standardprofil) |
 | `extension/` | Keepway-Erweiterung: Dashboard, Weiterleitungs- und Mining-Wächter |
-| `icon/` | Icon (SVG), Icon-Composer-Paket, `baue-icons.sh` |
+| `icon/` | Icon (SVG), Icon-Composer-Paket, kompiliertes App-Icon, `baue-icons.sh` (braucht Xcode) |
 
 ## Mitmachen
 

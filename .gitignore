@@ -1,6 +1,5 @@
-# privat / lokal
-docker/keys/
-.laufzeit/
-einstellungen.json
+# gebaut (./baue-app.sh)
+Keepway.app/
+# lokal
 .DS_Store
 __pycache__/

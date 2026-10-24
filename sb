@@ -7,19 +7,19 @@
 #   ./sb status   läuft er? wie alt ist Brave?
 #   ./sb log      Container-Log
 set -euo pipefail
-umask 077   # alles in .laufzeit nur für dich lesbar
+umask 077   # alle Daten nur für dich lesbar
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # Code (Repo-Ordner oder in Keepway.app)
 NAME=keepway
 IMAGE=keepway:local
 BASE=lscr.io/linuxserver/brave:latest
 # Kein Port am Mac: OrbStack erreicht den Container direkt unter <name>.orb.local
 # (nur von diesem Mac aus, nicht aus dem Netzwerk).
 URL="http://${NAME}.orb.local"
-LAUFZEIT="$DIR/.laufzeit"
-# Eigenes Brave-Profil nur für das Fenster – bewusst NICHT im Projektordner: liegt der auf dem
-# Schreibtisch/in Dokumenten, fragt macOS Brave nach Ordnerzugriff. So braucht es keine Freigabe.
-ZUSCHAUER="$HOME/Library/Application Support/Keepway/zuschauer"
+# Alle Daten (Einstellungen, Schlüssel, Build, Fenster-Profil) bewusst NICHT im Code-Ordner:
+# liegt der auf dem Schreibtisch/in Dokumenten, verlangt macOS Ordnerzugriff. Library braucht keine Freigabe.
+LAUFZEIT="$HOME/Library/Application Support/Keepway"
+ZUSCHAUER="$LAUFZEIT/zuschauer"     # eigenes Brave-Profil nur für das Fenster
 APP_MODUS=""                         # gesetzt bei ./sb app (ohne Terminal -> Dialoge)
 
 rot()   { printf '\033[31m%s\033[0m\n' "$*"; }
@@ -82,14 +82,13 @@ vpn_check() {
 }
 
 build_hash() {
-  (cd "$DIR" && find .laufzeit/build docker/Dockerfile docker/wrapped-brave docker/firewall.sh icon/keepway-512.png \
-     -type f -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -c1-16)
+  (cd "$LAUFZEIT" && find build -type f -print0 | sort -z | xargs -0 shasum -a 256 | shasum -a 256 | cut -c1-16)
 }
 
 baue() {
   echo "Baue Image (lokal, ohne Download)…"
   docker build -q --build-arg BASE="$BASE" --label keepway.hash="$(build_hash)" \
-    -f "$DIR/docker/Dockerfile" -t "$IMAGE" "$DIR" >/dev/null
+    -t "$IMAGE" "$LAUFZEIT/build" >/dev/null
   gruen "✓ Image gebaut"
 }
 
@@ -119,7 +118,7 @@ update() {
     gruen "✓ Brave ist aktuell"
     return
   fi
-  python3 -I "$DIR/docker/vorbereiten.py" "$DIR" normal >/dev/null
+  python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" normal >/dev/null
   baue
   gruen "✓ Neue Version: $(docker image inspect -f '{{index .Config.Labels "build_version"}}' "$BASE" | head -1)"
   if laeuft; then gelb "Läuft noch mit alter Version – ./sb stop und neu starten."; fi
@@ -199,7 +198,7 @@ start() {
   fi
 
   local res cpu ram tz
-  res=$(python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$modus") || fehler "einstellungen.json fehlerhaft (Details oben bzw. in .laufzeit/app.log)."
+  res=$(python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" "$modus") || fehler "einstellungen.json fehlerhaft (Details im Terminal bzw. in $LAUFZEIT/app.log)."
   cpu=${res% *}; ram=${res#* }
   image_aktuell || baue
   # Zeitzone vom Mac übernehmen (nichts Persönliches fest im Code)
@@ -210,7 +209,7 @@ start() {
     --label keepway.modus="$modus" \
     --shm-size=1g --memory="${ram}g" --cpus="$cpu" --pids-limit=4096 \
     --security-opt no-new-privileges \
-    --security-opt seccomp="$DIR/docker/seccomp-brave.json" \
+    --security-opt seccomp="$LAUFZEIT/build/seccomp-brave.json" \
     --cap-drop ALL \
     --cap-add CHOWN --cap-add SETUID --cap-add SETGID --cap-add DAC_OVERRIDE \
     --cap-add FOWNER --cap-add KILL --cap-add NET_ADMIN \
@@ -261,19 +260,39 @@ status() {
   echo "Brave-Image ist $(alter_tage) Tage alt"
 }
 
-# Aufruf aus Keepway.app (kein Terminal): läuft er schon, fragen ob beenden oder Fenster öffnen.
+# Auswahl-Dialog mit drei Knöpfen; gibt den gewählten Knopf aus (leer bei Abbrechen).
+auswahl() {
+  osascript - "$@" <<'AS' 2>/dev/null || true
+on run argv
+  display dialog (item 1 of argv) with title "Keepway" buttons {item 2 of argv, item 3 of argv, item 4 of argv} default button (item 4 of argv) cancel button (item 2 of argv)
+  return button returned of result
+end run
+AS
+}
+
+# Aufruf aus Keepway.app (kein Terminal): Modus wählen bzw. Fenster öffnen / beenden.
 app() {
   APP_MODUS=1
-  trap 'meldung "Keepway: Fehler – Details in .laufzeit/app.log"' ERR
+  trap 'meldung "Keepway: Fehler – Details in ~/Library/Application Support/Keepway/app.log"' ERR
   docker_bereit
+  local wahl
   if laeuft; then
-    if frage "Keepway läuft. Beenden und alles im Container löschen? (Nein = Fenster öffnen)"; then
-      stop
-    else
-      oeffne_fenster
-    fi
+    wahl=$(auswahl "Keepway läuft ($(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME"))." \
+      "Abbrechen" "Beenden + alles löschen" "Fenster öffnen")
+    case "$wahl" in
+      "Fenster öffnen") oeffne_fenster;;
+      "Beenden + alles löschen") stop; meldung "Keepway beendet – Container, Verlauf, Cookies und Dateien gelöscht.";;
+    esac
   else
-    start normal
+    wahl=$(auswahl "Wie soll Keepway starten?
+
+Normal: Downloads und Uploads gesperrt.
+Labor: Downloads erlaubt – bleiben im Container und werden beim Beenden gelöscht." \
+      "Abbrechen" "Labor" "Normal")
+    case "$wahl" in
+      Normal) start normal;;
+      Labor) start labor;;
+    esac
   fi
 }
 
