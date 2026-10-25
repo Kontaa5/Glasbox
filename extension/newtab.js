@@ -166,6 +166,7 @@ async function zeigeAlles(config) {
 }
 
 function zeigeModus(config) {
+  document.documentElement.dataset.thema = config.thema;
   $('labor').hidden = !config.labor;
   $('dl-info').textContent = config.labor
     ? 'Labor-Modus: Dateien liegen nur im Container (~/Downloads) und werden beim Beenden gelöscht.'

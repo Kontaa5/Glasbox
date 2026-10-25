@@ -9,8 +9,7 @@
   </g>
   <!-- Glaskasten = der Container -->
   <g id="ebene-glas">
-    <rect x="252" y="252" width="520" height="520" rx="110" fill="#163323" stroke="#34c77b" stroke-width="28"/>
-    <path d="M300 330 L370 300" stroke="#fff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
+    <rect x="252" y="252" width="520" height="520" rx="110" fill="none" stroke="#34c77b" stroke-width="32"/>
   </g>
   <!-- Globus = das Web, sicher eingeschlossen -->
   <g id="ebene-globus">

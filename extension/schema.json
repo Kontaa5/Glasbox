@@ -35,6 +35,9 @@
     },
     "labor": {
       "type": "boolean"
+    },
+    "thema": {
+      "type": "string"
     }
   }
 }

@@ -60,6 +60,7 @@ export async function ladeConfig() {
     cpu_warnung_prozent: zahl(roh.cpu_warnung_prozent, 10, 100, STANDARD.cpu_warnung_prozent),
     cpu_limit: zahl(roh.cpu_limit, 0, 256, STANDARD.cpu_limit),
     labor: roh.labor === true,
+    thema: roh.thema === 'hell' || roh.thema === 'dunkel' ? roh.thema : '',
   };
 }
 

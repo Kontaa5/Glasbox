@@ -1,4 +1,6 @@
-import { istWebUrl } from './lib.js';
+import { istWebUrl, ladeConfig } from './lib.js';
+
+ladeConfig().then((c) => { document.documentElement.dataset.thema = c.thema; });
 
 let daten = {};
 try {

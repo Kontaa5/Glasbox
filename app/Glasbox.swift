@@ -213,6 +213,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ n: Notification) {
         baueMenue()
+        // Hell/Dunkel am Mac umgeschaltet -> Dashboard im Container zieht mit
+        DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name("AppleInterfaceThemeChangedNotification"), object: nil, queue: .main
+        ) { [weak self] _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self?.gibThemaWeiter() }
+        }
         // Inhaltsregeln: jede Anfrage (Seiten, Skripte, fetch, WebSocket …) außer 127.0.0.1:1111 blockieren.
         // blob:/data: sind nur Daten innerhalb der Seite (z. B. Video-Decoder) – kein Netzwerk, daher erlaubt.
         let json = """
@@ -264,7 +270,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    /// Aktuelles Aussehen des Macs an das Dashboard im Container geben (über `sb thema`).
+    private func gibThemaWeiter() {
+        let dunkel = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        DispatchQueue.global().async { _ = Sb.ausfuehren(["thema", dunkel ? "dunkel" : "hell"]) }
+    }
+
     private func zeigeStream(_ modus: String) {
+        gibThemaWeiter()
         let s = StreamController(modus: modus, regeln: regeln)
         s.schliessenGewuenscht = { [weak self] in self?.frageBeenden() }
         stream = s

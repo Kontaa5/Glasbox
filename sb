@@ -65,6 +65,27 @@ docker_bereit() {
   fehler "Docker/OrbStack antwortet nicht."
 }
 
+# Aussehen des Macs (nur lesen): hell oder dunkel
+mac_thema() { [ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" = Dark ] && echo dunkel || echo hell; }
+
+# Thema im laufenden Betrieb ändern: Datei an Ort und Stelle überschreiben (gleiche Datei bleibt eingebunden).
+thema_setzen() {
+  [[ "$1" =~ ^(hell|dunkel)$ ]] || fehler "Aufruf: ./sb thema hell|dunkel"
+  [ -f "$LAUFZEIT/erweiterung.json" ] || return 0
+  python3 -I - "$LAUFZEIT/erweiterung.json" "$1" <<'PY'
+import json, sys
+p, thema = sys.argv[1], sys.argv[2]
+d = json.load(open(p))
+for e in d["3rdparty"]["extensions"].values():
+    e["thema"] = thema
+with open(p, "r+") as f:
+    f.seek(0); f.write(json.dumps(d, ensure_ascii=False, indent=1)); f.truncate()
+PY
+  # Änderungen vom Mac lösen im Container kein Datei-Ereignis aus – ein kurzes Anlegen/Löschen
+  # im Richtlinien-Ordner schon, dann liest Brave sofort neu (sonst erst nach 15 Minuten).
+  laeuft && docker exec "$NAME" sh -c 'touch /etc/brave/policies/managed/.anstoss && rm -f /etc/brave/policies/managed/.anstoss' || true
+}
+
 laeuft() { [ "$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)" = "true" ]; }
 
 vpn_check() {
@@ -117,7 +138,7 @@ update() {
     gruen "✓ Brave ist aktuell"
     return
   fi
-  python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" normal >/dev/null
+  python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" normal "$(mac_thema)" >/dev/null
   baue
   gruen "✓ Neue Version: $(docker image inspect -f '{{index .Config.Labels "build_version"}}' "$BASE" | head -1)"
   if laeuft; then gelb "Läuft noch mit alter Version – ./sb stop und neu starten."; fi
@@ -202,7 +223,7 @@ start() {
   fi
 
   local res cpu ram tz
-  res=$(python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" "$modus") || fehler "einstellungen.json fehlerhaft (Details im Terminal bzw. in $LAUFZEIT/app.log)."
+  res=$(python3 -I "$DIR/docker/vorbereiten.py" "$DIR" "$LAUFZEIT" "$modus" "$(mac_thema)") || fehler "einstellungen.json fehlerhaft (Details im Terminal bzw. in $LAUFZEIT/app.log)."
   cpu=${res% *}; ram=${res#* }
   image_aktuell || baue
   # Zeitzone vom Mac übernehmen (nichts Persönliches fest im Code)
@@ -275,6 +296,7 @@ case "${1:-start}" in
   stop) stop;;
   update) update;;
   status) status;;
+  thema) thema_setzen "${2:-}";;
   modus) laeuft && docker inspect -f '{{index .Config.Labels "glasbox.modus"}}' "$NAME" || true;;
   log) docker logs --tail 80 "$NAME";;
   *) sed -n '2,8p' "$0"; exit 1;;

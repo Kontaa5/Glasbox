@@ -9,7 +9,7 @@
 <daten> = ~/Library/Application Support/Glasbox – bewusst nicht im Code-Ordner, damit macOS
 keinen Zugriff auf Schreibtisch/Dokumente verlangen muss.
 
-Aufruf: python3 -I docker/vorbereiten.py <codeordner> <datenordner> <normal|labor>
+Aufruf: python3 -I docker/vorbereiten.py <codeordner> <datenordner> <normal|labor> [hell|dunkel]
 Ausgabe (stdout): "<cpu_kerne> <arbeitsspeicher_gb>"
 """
 import base64
@@ -22,6 +22,7 @@ import sys
 from urllib.parse import urlparse
 
 ordner, daten, modus = sys.argv[1], sys.argv[2], sys.argv[3]
+thema = sys.argv[4] if len(sys.argv) > 4 and sys.argv[4] in ("hell", "dunkel") else ""
 if modus not in ("normal", "labor"):
     sys.exit("Modus muss normal oder labor sein")
 
@@ -97,6 +98,7 @@ erweiterung = {
     "cpu_warnung_prozent": zahl("cpu_warnung_prozent", 10, 100, 70),
     "cpu_limit": cpu,
     "labor": modus == "labor",
+    "thema": thema,
 }
 json.dump({"3rdparty": {"extensions": {ext_id: erweiterung}}},
           open(os.path.join(laufzeit, "erweiterung.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)

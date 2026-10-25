@@ -10,6 +10,11 @@
   --akzent: #6c8cff;
   color-scheme: dark;
 }
+/* Hell: vom Mac vorgegeben (data-thema) – sonst nach System des Containers */
+:root[data-thema="hell"] { --bg: #f5f6f8; --karte: #ffffff; --rand: #e2e5ea; --text: #1d2129; --leise: #667085; --gruen: #13894f; --rot: #d93025; --gelb: #a8680e; --akzent: #3b5bdb; color-scheme: light; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-thema="dunkel"]) { --bg: #f5f6f8; --karte: #ffffff; --rand: #e2e5ea; --text: #1d2129; --leise: #667085; --gruen: #13894f; --rot: #d93025; --gelb: #a8680e; --akzent: #3b5bdb; color-scheme: light; }
+}
 * { box-sizing: border-box; }
 body {
   margin: 0;

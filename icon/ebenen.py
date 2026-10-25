@@ -24,7 +24,7 @@ gruppen = [{"layers": [{"image-name": name + ".svg", "name": name}]} for name, _
 json.dump({
     "fill": {"automatic-gradient": "extended-srgb:0.94000,0.96000,0.98000,1.00000"},
     "fill-specializations": [{"appearance": "dark",
-                              "value": {"automatic-gradient": "extended-srgb:0.12000,0.14000,0.18000,1.00000"}}],
+                              "value": {"automatic-gradient": "extended-srgb:0.07000,0.08000,0.10000,1.00000"}}],
     "groups": gruppen,
     "supported-platforms": {"squares": "shared"},
 }, open(os.path.join(ziel, "icon.json"), "w", encoding="utf-8"), indent=2)
