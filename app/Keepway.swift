@@ -198,10 +198,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ n: Notification) {
         baueMenue()
         // Inhaltsregeln: jede Anfrage (Seiten, Skripte, fetch, WebSocket …) außer 127.0.0.1:1111 blockieren.
+        // blob:/data: sind nur Daten innerhalb der Seite (z. B. Video-Decoder) – kein Netzwerk, daher erlaubt.
         let json = """
         [{"trigger":{"url-filter":".*"},"action":{"type":"block"}},
          {"trigger":{"url-filter":"^http://127\\\\.0\\\\.0\\\\.1:1111/"},"action":{"type":"ignore-previous-rules"}},
-         {"trigger":{"url-filter":"^ws://127\\\\.0\\\\.0\\\\.1:1111/"},"action":{"type":"ignore-previous-rules"}}]
+         {"trigger":{"url-filter":"^ws://127\\\\.0\\\\.0\\\\.1:1111/"},"action":{"type":"ignore-previous-rules"}},
+         {"trigger":{"url-filter":"^blob:"},"action":{"type":"ignore-previous-rules"}},
+         {"trigger":{"url-filter":"^data:"},"action":{"type":"ignore-previous-rules"}}]
         """
         WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "keepway-nur-lokal",
                                                                 encodedContentRuleList: json) { liste, fehler in
