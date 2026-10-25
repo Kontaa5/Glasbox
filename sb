@@ -219,7 +219,9 @@ start() {
     --cap-add CHOWN --cap-add SETUID --cap-add SETGID --cap-add DAC_OVERRIDE \
     --cap-add FOWNER --cap-add KILL --cap-add NET_ADMIN \
     -e PUID=1000 -e PGID=1000 -e TZ="$tz" -e DISABLE_IPV6=true \
-    -e HARDEN_DESKTOP=true -e HARDEN_OPENBOX=true \
+    -e HARDEN_DESKTOP=true \
+    -e DISABLE_CLOSE_BUTTON=true -e DISABLE_MOUSE_BUTTONS=true -e RESTART_APP=true \
+    -e SELKIES_USE_CSS_SCALING="true|locked" \
     -e SELKIES_ENABLE_CLIPBOARD="in" \
     -e SELKIES_CLIPBOARD_SEAMLESS="false|locked" \
     -e SELKIES_ENABLE_BINARY_CLIPBOARD="false|locked" \
