@@ -28,13 +28,12 @@ export DOCKER_HOST="unix://$HOME/.orbstack/run/docker.sock"
 mkdir -p "$DOCKER_CONFIG"
 # buildx (für docker build) kommt direkt aus OrbStack
 printf '{"cliPluginsExtraDirs": ["/Applications/OrbStack.app/Contents/MacOS/xbin"]}\n' > "$DOCKER_CONFIG/config.json"
-APP_MODUS=""                         # gesetzt bei ./sb app (ohne Terminal -> Dialoge)
 
 rot()   { printf '\033[31m%s\033[0m\n' "$*"; }
 gruen() { printf '\033[32m%s\033[0m\n' "$*"; }
 gelb()  { printf '\033[33m%s\033[0m\n' "$*"; }
 
-# Ja/Nein-Frage: im Terminal per read, aus der App als macOS-Dialog.
+# Ja/Nein-Frage: im Terminal per read, aus Keepway.app (kein Terminal) als macOS-Dialog.
 # Der Text wird als Argument übergeben, nie in das AppleScript eingebaut.
 frage() {
   if [ -t 0 ]; then
@@ -53,17 +52,7 @@ AS
   fi
 }
 
-meldung() {
-  [ -n "$APP_MODUS" ] || return 0
-  osascript - "$1" <<'AS' >/dev/null 2>&1 || true
-on run argv
-  activate
-  display dialog (item 1 of argv) with title "Keepway" buttons {"OK"} default button "OK"
-end run
-AS
-}
-
-fehler() { rot "$1"; meldung "$1"; exit 1; }
+fehler() { rot "$1"; exit 1; }
 
 docker_bereit() {
   docker info >/dev/null 2>&1 && return 0
@@ -166,14 +155,17 @@ json.dump({
 PY
 }
 
-oeffne_fenster() {
-  local bereit=""
+warte_bereit() {
   for _ in $(seq 1 45); do
     laeuft || fehler "Der Keepway-Container wurde unerwartet beendet. Bitte neu starten."
-    if curl -fs --max-time 2 -o /dev/null "$URL/"; then bereit=1; break; fi
+    curl -fs --max-time 2 -o /dev/null "$URL/" && return 0
     sleep 1
   done
-  [ -n "$bereit" ] || fehler "Keepway antwortet nicht (Details: ./sb log)."
+  fehler "Keepway antwortet nicht (Details: ./sb log)."
+}
+
+oeffne_fenster() {
+  warte_bereit
   [ -d "/Applications/Brave Browser.app" ] || fehler "Brave fehlt am Mac – Keepway braucht Brave für das Fenster."
   zuschauer_profil
   # Eigenes Profil (keine Erweiterungen, keine Cookies deiner anderen Seiten), kein Schlüsselbund.
@@ -187,8 +179,9 @@ oeffne_fenster() {
   gruen "✓ Fenster geöffnet"
 }
 
+# start <normal|labor> [ohne-fenster]  – ohne-fenster: nur Container (für die Keepway-App)
 start() {
-  local modus="$1"
+  local modus="$1" fenster="${2:-mit-fenster}"
   mkdir -p "$LAUFZEIT"
   chmod 700 "$LAUFZEIT"
   docker_bereit
@@ -196,7 +189,7 @@ start() {
     local aktiv
     aktiv=$(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME")
     [ "$aktiv" = "$modus" ] || fehler "Keepway läuft schon im Modus „$aktiv“. Erst ./sb stop, dann neu starten."
-    oeffne_fenster
+    [ "$fenster" = ohne-fenster ] || oeffne_fenster
     return
   fi
   vpn_check
@@ -248,7 +241,7 @@ start() {
     "$IMAGE" >/dev/null
   [ "$modus" = labor ] && gelb "🧪 Labor-Modus: Downloads erlaubt – bleiben im Container, beim Beenden gelöscht"
   gruen "✓ Container gestartet (frisch, ohne Zugriff auf deine Dateien)"
-  oeffne_fenster
+  if [ "$fenster" = ohne-fenster ]; then warte_bereit; else oeffne_fenster; fi
 }
 
 stop() {
@@ -272,50 +265,15 @@ status() {
   echo "Brave-Image ist $(alter_tage) Tage alt"
 }
 
-# Auswahl-Dialog mit drei Knöpfen; gibt den gewählten Knopf aus (leer bei Abbrechen).
-auswahl() {
-  osascript - "$@" <<'AS' 2>/dev/null || true
-on run argv
-  activate
-  display dialog (item 1 of argv) with title "Keepway" buttons {item 2 of argv, item 3 of argv, item 4 of argv} default button (item 4 of argv) cancel button (item 2 of argv)
-  return button returned of result
-end run
-AS
-}
-
-# Aufruf aus Keepway.app (kein Terminal): Modus wählen bzw. Fenster öffnen / beenden.
-app() {
-  APP_MODUS=1
-  trap 'meldung "Keepway: Fehler – Details in ~/Library/Application Support/Keepway/app.log"' ERR
-  docker_bereit
-  local wahl
-  if laeuft; then
-    wahl=$(auswahl "Keepway läuft ($(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME"))." \
-      "Abbrechen" "Beenden + alles löschen" "Fenster öffnen")
-    case "$wahl" in
-      "Fenster öffnen") oeffne_fenster;;
-      "Beenden + alles löschen") stop; meldung "Keepway beendet – Container, Verlauf, Cookies und Dateien gelöscht.";;
-    esac
-  else
-    wahl=$(auswahl "Wie soll Keepway starten?
-
-Normal: Downloads und Uploads gesperrt.
-Labor: Downloads erlaubt – bleiben im Container und werden beim Beenden gelöscht." \
-      "Abbrechen" "Labor" "Normal")
-    case "$wahl" in
-      Normal) start normal;;
-      Labor) start labor;;
-    esac
-  fi
-}
-
 case "${1:-start}" in
   start) start normal;;
   labor) start labor;;
+  hochfahren) [[ "${2:-}" =~ ^(normal|labor)$ ]] || fehler "Aufruf: ./sb hochfahren normal|labor"
+              start "$2" ohne-fenster;;
   stop) stop;;
   update) update;;
   status) status;;
-  app) app;;
+  modus) laeuft && docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME" || true;;
   log) docker logs --tail 80 "$NAME";;
   *) sed -n '2,8p' "$0"; exit 1;;
 esac

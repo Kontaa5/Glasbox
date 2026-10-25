@@ -9,7 +9,7 @@ Verlauf, Cookies, Cache, Dateien.
 
 Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 
-> Für macOS (Apple Silicon) mit [OrbStack](https://orbstack.dev) und Brave.
+> Für macOS (Apple Silicon) mit [OrbStack](https://orbstack.dev). Brave am Mac braucht es nur für `./sb` im Terminal.
 > Eine Linux-Version gibt es noch nicht – Pull Requests willkommen.
 
 ---
@@ -28,12 +28,13 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
 - **VPN-Check beim Start**.
 - **Labor-Modus** zum Herunterladen und Prüfen verdächtiger Dateien – ohne dass sie den Container verlassen.
-- **Keepway.app** mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst) – Start ohne Terminal.
+- **Keepway.app**: eigenes Fenster mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst).
+  Beim Start Normal oder Labor wählen, beim Schließen „Beenden + alles löschen“ oder im Hintergrund weiterlaufen.
 - **Wöchentliche Update-Frage** für Brave.
 
 ## Installation
 
-1. [OrbStack](https://orbstack.dev) und [Brave](https://brave.com) installieren.
+1. [OrbStack](https://orbstack.dev) und die Xcode-Kommandozeilentools (`xcode-select --install`) installieren.
 2. Repo klonen, in den Ordner wechseln.
 3. `./baue-app.sh` – erzeugt **Keepway.app** (kann im Ordner bleiben oder nach „Programme“).
 4. Keepway.app starten. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
@@ -59,8 +60,10 @@ nichts ist bei zwei Installationen gleich.
 ./sb log        # Container-Log
 ```
 
-**Keepway.app** fragt beim Start: **Normal** oder **Labor**. Läuft Keepway schon:
-**Fenster öffnen** oder **Beenden + alles löschen**. Fragen (VPN, Updates) kommen als Dialog.
+**Keepway.app** fragt beim Start: **Normal** oder **Labor**. Läuft Keepway schon, öffnet sich direkt
+das Fenster. Schließen (oder Cmd+Q) fragt: **Beenden + alles löschen** (Standard – braucht danach keine
+Leistung mehr) oder **im Hintergrund weiterlaufen**. Hängt das Bild: **Cmd+R** verbindet neu.
+Fragen (VPN, Updates) kommen als Dialog.
 
 Im Terminal geht dasselbe mit `./sb` (der Repo-Ordner funktioniert an jedem Ort, `./sb` findet
 seinen Pfad selbst; er nutzt dieselben Daten in Library wie die App).
@@ -127,10 +130,12 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
    Speicher-/CPU-/Prozess-Limit, ungenutzte Weiterleitungen im Webserver entfernt.
 6. **Firewall im Container**: Router, NAS, der Mac und alles im lokalen Netz sind gesperrt.
    Ohne aktive Firewall startet Brave nicht.
-7. **Abgeriegeltes Fenster**: eigenes Brave-Profil (in `~/Library/Application Support/Keepway`),
-   ohne Erweiterungen, ohne Schlüsselbund – dein normales Brave wird nicht angefasst.
-   Alles außer `127.0.0.1:1111` geht auf einen toten Proxy – das Fenster erreicht weder das
-   Internet noch deine localhost-Apps. Darum **immer über `./sb` öffnen, nicht in einem normalen Tab**.
+7. **Abgeriegeltes Fenster** (Keepway.app, Apple WebKit): lädt ausschließlich `127.0.0.1:1111` –
+   Inhaltsregeln sperren jede andere Anfrage (getestet: localhost-Apps, Router, Internet gesperrt).
+   Speichert nichts (nicht-persistenter Speicher), keine Downloads, keine Dateiauswahl, keine Kamera,
+   kein Mikrofon, keine Pop-ups, keine Verbindung von der Seite zur App.
+   Im Terminal öffnet `./sb` stattdessen ein ebenso abgeriegeltes Brave-Fenster mit eigenem Profil.
+   Darum **nie in einem normalen Browser-Tab öffnen**.
 8. **Zwischenablage nur Mac → Container** und nur über das Feld in der Seitenleiste.
    Kein Datei-Transfer, keine Teilen-Links, kein Mikro, keine Kamera.
 9. **Brave-Richtlinien** ([docker/policies.json](docker/policies.json)): Downloads und Dateiauswahl gesperrt,
@@ -155,7 +160,8 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
 | Pfad | Inhalt |
 |---|---|
 | `sb` | Startskript (auch in der App enthalten) |
-| `baue-app.sh` | baut Keepway.app (ohne Xcode) |
+| `baue-app.sh` | baut Keepway.app (braucht nur `swiftc`) |
+| `app/Keepway.swift` | die App: Startfenster, abgeriegeltes Stream-Fenster, Beenden-Dialog |
 | `docker/Dockerfile` | Image auf Basis von `lscr.io/linuxserver/brave` |
 | `docker/policies.json` | Brave-Richtlinien (Vorlage, ID wird pro Klon eingesetzt) |
 | `docker/vorbereiten.py` | Schlüssel erzeugen, Vorlagen füllen, Einstellungen prüfen, Build-Ordner in Library anlegen |
