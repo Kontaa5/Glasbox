@@ -1,11 +1,11 @@
-// Keepway.app – eigenes Fenster für den Wegwerf-Browser.
+// Glasbox.app – eigenes Fenster für den Wegwerf-Browser.
 //
 // Die App selbst surft nicht: sie startet über das mitgelieferte `sb` den Container und zeigt
 // dessen Bildstream (http://127.0.0.1:1111) in einem abgeriegelten WKWebView:
 //   - lädt ausschließlich 127.0.0.1:1111 (Navigation + Inhaltsregeln für jede Anfrage)
 //   - speichert nichts (nicht-persistenter Datenspeicher), keine Downloads, keine Dateiauswahl,
 //     keine Kamera/Mikrofon, keine neuen Fenster, keine Brücke von JavaScript zur App
-// Beim Schließen: Keepway beenden + alles löschen (Standard) oder im Hintergrund weiterlaufen lassen.
+// Beim Schließen: Glasbox beenden + alles löschen (Standard) oder im Hintergrund weiterlaufen lassen.
 import AppKit
 import WebKit
 
@@ -15,7 +15,7 @@ let erlaubterUrsprung = "http://127.0.0.1:1111"
 // MARK: - sb aufrufen (Argument-Array, kein Shell-String)
 
 enum Sb {
-    static var pfad: String { Bundle.main.resourcePath! + "/keepway/sb" }
+    static var pfad: String { Bundle.main.resourcePath! + "/glasbox/sb" }
 
     /// Führt `sb <args>` aus und liefert (Exit-Code, Ausgabe). Ausgabe geht zusätzlich ins Log.
     static func ausfuehren(_ args: [String]) -> (Int32, String) {
@@ -39,7 +39,7 @@ enum Sb {
 
     static func protokolliere(_ text: String) {
         let ordner = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/Keepway", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Glasbox", isDirectory: true)
         try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
         let datei = ordner.appendingPathComponent("app.log")
         if let h = try? FileHandle(forWritingTo: datei) {
@@ -67,7 +67,7 @@ final class StartController: NSWindowController {
     convenience init() {
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        w.title = "Keepway"
+        w.title = "Glasbox"
         self.init(window: w)
         baue()
         w.center()
@@ -76,7 +76,7 @@ final class StartController: NSWindowController {
     private func baue() {
         let icon = NSImageView(image: NSApp.applicationIconImage)
         icon.imageScaling = .scaleProportionallyUpOrDown
-        let titel = NSTextField(labelWithString: "Wie soll Keepway starten?")
+        let titel = NSTextField(labelWithString: "Wie soll Glasbox starten?")
         titel.font = .systemFont(ofSize: 17, weight: .semibold)
         let info = NSTextField(wrappingLabelWithString:
             "Normal: Downloads und Uploads gesperrt.\nLabor: Downloads erlaubt – sie bleiben im Container und werden beim Beenden gelöscht.")
@@ -145,8 +145,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1280, height: 860),
                          styleMask: [.titled, .closable, .miniaturizable, .resizable],
                          backing: .buffered, defer: false)
-        w.title = modus == "labor" ? "Keepway – 🧪 Labor" : "Keepway"
-        w.setFrameAutosaveName("KeepwayStream")
+        w.title = modus == "labor" ? "Glasbox – 🧪 Labor" : "Glasbox"
+        w.setFrameAutosaveName("GlasboxStream")
         w.collectionBehavior = [.fullScreenPrimary]
         self.init(window: w)
         w.delegate = self
@@ -160,11 +160,11 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         webView.uiDelegate = self
         webView.allowsMagnification = false
         w.contentView = webView
-        if !w.setFrameUsingName("KeepwayStream") { w.center() }
+        if !w.setFrameUsingName("GlasboxStream") { w.center() }
         webView.load(URLRequest(url: adresse))
     }
 
-    // Nur die Keepway-Oberfläche darf geladen werden.
+    // Nur die Glasbox-Oberfläche darf geladen werden.
     func webView(_ v: WKWebView, decidePolicyFor a: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let u = a.request.url
@@ -222,11 +222,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
          {"trigger":{"url-filter":"^blob:"},"action":{"type":"ignore-previous-rules"}},
          {"trigger":{"url-filter":"^data:"},"action":{"type":"ignore-previous-rules"}}]
         """
-        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "keepway-nur-lokal",
+        WKContentRuleListStore.default().compileContentRuleList(forIdentifier: "glasbox-nur-lokal",
                                                                 encodedContentRuleList: json) { liste, fehler in
             if liste == nil {
                 // Ohne Regeln kein Fenster – lieber gar nicht als ungeschützt.
-                self.meldeUndBeende("Keepway konnte seine Schutzregeln nicht laden: \(fehler?.localizedDescription ?? "?")")
+                self.meldeUndBeende("Glasbox konnte seine Schutzregeln nicht laden: \(fehler?.localizedDescription ?? "?")")
                 return
             }
             self.regeln = liste
@@ -275,21 +275,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Schließen oder Cmd+Q: beenden + löschen (Standard) oder im Hintergrund laufen lassen.
     private func frageBeenden() {
         let a = NSAlert()
-        a.messageText = "Keepway beenden?"
+        a.messageText = "Glasbox beenden?"
         a.informativeText = "Beim Beenden wird alles im Container gelöscht – Verlauf, Cookies, Dateien – und er braucht keine Leistung mehr."
         a.addButton(withTitle: "Beenden + alles löschen")
         a.addButton(withTitle: "Im Hintergrund weiterlaufen")
         a.addButton(withTitle: "Abbrechen")
         switch a.runModal() {
-        case .alertFirstButtonReturn: beendeKeepway()
+        case .alertFirstButtonReturn: beendeGlasbox()
         case .alertSecondButtonReturn: beendetSich = true; NSApp.terminate(nil)
         default: break
         }
     }
 
-    private func beendeKeepway() {
-        stream?.window?.title = "Keepway – wird beendet …"
-        stream?.webView.loadHTMLString("<body style='background:#0f1115;color:#8b92a0;font:15px system-ui;display:grid;place-items:center;height:90vh'>Keepway wird beendet und gelöscht …</body>", baseURL: nil)
+    private func beendeGlasbox() {
+        stream?.window?.title = "Glasbox – wird beendet …"
+        stream?.webView.loadHTMLString("<body style='background:#0f1115;color:#8b92a0;font:15px system-ui;display:grid;place-items:center;height:90vh'>Glasbox wird beendet und gelöscht …</body>", baseURL: nil)
         DispatchQueue.global().async {
             _ = Sb.ausfuehren(["stop"])
             DispatchQueue.main.async { self.beendetSich = true; NSApp.terminate(nil) }
@@ -310,7 +310,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func meldeUndBeende(_ text: String) {
-        let a = NSAlert(); a.messageText = "Keepway"; a.informativeText = text; a.runModal()
+        let a = NSAlert(); a.messageText = "Glasbox"; a.informativeText = text; a.runModal()
         beendetSich = true; NSApp.terminate(nil)
     }
 
@@ -318,9 +318,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let haupt = NSMenu()
         let appItem = NSMenuItem(); haupt.addItem(appItem)
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "Keepway ausblenden", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Glasbox ausblenden", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Keepway beenden …", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Glasbox beenden …", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
 
         let bearbItem = NSMenuItem(); haupt.addItem(bearbItem)

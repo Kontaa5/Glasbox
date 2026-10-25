@@ -1,4 +1,4 @@
-"""Bereitet einen Keepway-Start vor (aufgerufen von ./sb, läuft am Mac).
+"""Bereitet einen Glasbox-Start vor (aufgerufen von ./sb, läuft am Mac).
 
 1. Eigener Signierschlüssel pro Installation (<daten>/keys/extension.pem, nie im Repo)
    -> eigene Erweiterungs-ID, nichts ist bei zwei Klonen gleich.
@@ -6,7 +6,7 @@
 3. <daten>/einstellungen.json prüfen -> <daten>/erweiterung.json (Richtlinie für die Erweiterung)
    und <daten>/modus.json (normal: Downloads gesperrt, labor: erlaubt).
 
-<daten> = ~/Library/Application Support/Keepway – bewusst nicht im Code-Ordner, damit macOS
+<daten> = ~/Library/Application Support/Glasbox – bewusst nicht im Code-Ordner, damit macOS
 keinen Zugriff auf Schreibtisch/Dokumente verlangen muss.
 
 Aufruf: python3 -I docker/vorbereiten.py <codeordner> <datenordner> <normal|labor>
@@ -54,7 +54,7 @@ json.dump(manifest, open(manifest_pfad, "w", encoding="utf-8"), ensure_ascii=Fal
 shutil.copy(pem, os.path.join(build, "extension.pem"))
 os.chmod(os.path.join(build, "extension.pem"), 0o600)
 for quelle_rel, ziel_name in (("docker/Dockerfile", "Dockerfile"), ("docker/wrapped-brave", "wrapped-brave"), ("docker/firewall.sh", "firewall.sh"),
-                              ("docker/seccomp-brave.json", "seccomp-brave.json"), ("icon/keepway-512.png", "icon.png")):
+                              ("docker/seccomp-brave.json", "seccomp-brave.json"), ("icon/glasbox-512.png", "icon.png")):
     shutil.copy(os.path.join(ordner, quelle_rel), os.path.join(build, ziel_name))
 
 # --- 3. Einstellungen ---

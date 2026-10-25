@@ -30,9 +30,9 @@ if ip6tables -L OUTPUT >/dev/null 2>&1; then
     ip6tables -A OUTPUT -d "$net" -j REJECT
   done
 elif [ -n "$(ip -6 addr show scope global 2>/dev/null)" ]; then
-  echo "[Keepway] IPv6 vorhanden, aber ip6tables nicht nutzbar – Abbruch" >&2
+  echo "[Glasbox] IPv6 vorhanden, aber ip6tables nicht nutzbar – Abbruch" >&2
   exit 1
 fi
 
 touch /run/sb-firewall-ok
-echo "[Keepway] Firewall aktiv: lokales Netz gesperrt"
+echo "[Glasbox] Firewall aktiv: lokales Netz gesperrt"

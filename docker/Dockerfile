@@ -1,5 +1,5 @@
-# Keepway: Brave im Wegwerf-Container
-# Build-Kontext = ~/Library/Application Support/Keepway/build (von docker/vorbereiten.py
+# Glasbox: Brave im Wegwerf-Container
+# Build-Kontext = ~/Library/Application Support/Glasbox/build (von docker/vorbereiten.py
 # mit der eigenen Erweiterungs-ID gefüllt). Baut immer auf der lokal vorhandenen Basis;
 # neue Brave-Version nur über ./sb update bzw. die wöchentliche Nachfrage.
 ARG BASE=lscr.io/linuxserver/brave:latest
@@ -14,7 +14,7 @@ RUN /opt/brave.com/brave/brave --no-sandbox --headless \
 
 # --- Stufe 2: eigentliches Image ---
 FROM ${BASE}
-COPY policies.json /etc/brave/policies/managed/keepway.json
+COPY policies.json /etc/brave/policies/managed/glasbox.json
 COPY updates.xml /opt/sb-crx/updates.xml
 COPY --from=packer /tmp/pack/ext.crx /opt/sb-crx/sb.crx
 COPY wrapped-brave /usr/bin/wrapped-brave

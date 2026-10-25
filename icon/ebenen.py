@@ -1,6 +1,6 @@
-"""Zerlegt keepway-hell.svg in Ebenen (<g id="ebene-…">) und schreibt ein Icon-Composer-Paket.
+"""Zerlegt glasbox-hell.svg in Ebenen (<g id="ebene-…">) und schreibt ein Icon-Composer-Paket.
 Der Hintergrund kommt aus icon.json (hell/dunkel), nicht aus dem SVG.
-Aufruf: python3 -I ebenen.py keepway-hell.svg AppIcon.icon"""
+Aufruf: python3 -I ebenen.py glasbox-hell.svg AppIcon.icon"""
 import json
 import os
 import re

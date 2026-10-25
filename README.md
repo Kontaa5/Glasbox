@@ -1,8 +1,8 @@
-# Keepway
+# Glasbox
 
-<img src="icon/keepway-512.png" width="96" align="right" alt="Keepway-Icon">
+<img src="icon/glasbox-512.png" width="96" align="right" alt="Glasbox-Icon">
 
-**Ein Wegwerf-Browser für unsichere Websites.** Keepway startet Brave in einem abgeschotteten
+**Ein Wegwerf-Browser für unsichere Websites.** Glasbox startet Brave in einem abgeschotteten
 Container auf deinem Mac. Du siehst und bedienst ihn ganz normal in einem eigenen Fenster – aber
 die Webseiten laufen nicht auf deinem Mac, sondern im Container. Beim Beenden wird alles gelöscht:
 Verlauf, Cookies, Cache, Dateien.
@@ -28,7 +28,7 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
 - **VPN-Check beim Start**.
 - **Labor-Modus** zum Herunterladen und Prüfen verdächtiger Dateien – ohne dass sie den Container verlassen.
-- **Keepway.app**: eigenes Fenster mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst).
+- **Glasbox.app**: eigenes Fenster mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst).
   Beim Start Normal oder Labor wählen, beim Schließen „Beenden + alles löschen“ oder im Hintergrund weiterlaufen.
 - **Wöchentliche Update-Frage** für Brave.
 
@@ -36,16 +36,16 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 
 1. [OrbStack](https://orbstack.dev) und die Xcode-Kommandozeilentools (`xcode-select --install`) installieren.
 2. Repo klonen, in den Ordner wechseln.
-3. `./baue-app.sh` – erzeugt **Keepway.app** (kann im Ordner bleiben oder nach „Programme“).
-4. Keepway.app starten. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
+3. `./baue-app.sh` – erzeugt **Glasbox.app** (kann im Ordner bleiben oder nach „Programme“).
+4. Glasbox.app starten. Beim ersten Start wird das Brave-Image einmalig geladen (~1,2 GB),
    danach startet alles lokal in Sekunden.
 
 Die App ist eigenständig: der Code steckt in der App, alle Daten liegen in
-`~/Library/Application Support/Keepway` (Einstellungen, Schlüssel, Fenster-Profil).
-Deshalb braucht Keepway **keinen Zugriff auf Schreibtisch, Dokumente oder Downloads**.
-Die App startet Keepway im Hintergrund und beendet sich sofort wieder.
+`~/Library/Application Support/Glasbox` (Einstellungen, Schlüssel, Fenster-Profil).
+Deshalb braucht Glasbox **keinen Zugriff auf Schreibtisch, Dokumente oder Downloads**.
+Die App startet Glasbox im Hintergrund und beendet sich sofort wieder.
 
-Beim ersten Start erzeugt Keepway einen **eigenen Signierschlüssel** für seine Erweiterung
+Beim ersten Start erzeugt Glasbox einen **eigenen Signierschlüssel** für seine Erweiterung
 (nur in Library, nie im Repo). Jede Installation hat dadurch eine andere Erweiterungs-ID –
 nichts ist bei zwei Installationen gleich.
 
@@ -60,7 +60,7 @@ nichts ist bei zwei Installationen gleich.
 ./sb log        # Container-Log
 ```
 
-**Keepway.app** fragt beim Start: **Normal** oder **Labor**. Läuft Keepway schon, öffnet sich direkt
+**Glasbox.app** fragt beim Start: **Normal** oder **Labor**. Läuft Glasbox schon, öffnet sich direkt
 das Fenster. Schließen (oder Cmd+Q) fragt: **Beenden + alles löschen** (Standard – braucht danach keine
 Leistung mehr) oder **im Hintergrund weiterlaufen**. Hängt das Bild: **Cmd+R** verbindet neu.
 Fragen (VPN, Updates) kommen als Dialog.
@@ -87,7 +87,7 @@ Jederzeit manuell: `./sb update`.
 
 ### Einstellungen
 
-Beim ersten Start wird `~/Library/Application Support/Keepway/einstellungen.json` aus
+Beim ersten Start wird `~/Library/Application Support/Glasbox/einstellungen.json` aus
 `einstellungen.beispiel.json` angelegt (bleibt lokal, nicht im Repo):
 
 | Feld | Bedeutung |
@@ -109,8 +109,8 @@ deine Einstellungen und das leere Fenster-Profil in Library.
 ```
  Mac                                         OrbStack (Linux-VM)
 ┌──────────────────────────────┐            ┌───────────────────────────────────────────┐
-│ Keepway-Fenster              │  Bild +    │ Container „keepway“ (frisch bei jedem Start)│
-│ (eigenes Brave-Profil,       │◀─ Ton ─────│  Brave + Keepway-Erweiterung               │
+│ Glasbox-Fenster              │  Bild +    │ Container „glasbox“ (frisch bei jedem Start)│
+│ (eigenes Brave-Profil,       │◀─ Ton ─────│  Brave + Glasbox-Erweiterung               │
 │  kann NUR 127.0.0.1:1111)    │── Maus/ ──▶│  Firewall: lokales Netz gesperrt          │
 │                              │   Tasten   │  ──▶ Internet (über dein VPN)              │
 └──────────────────────────────┘            └───────────────────────────────────────────┘
@@ -130,7 +130,7 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
    Speicher-/CPU-/Prozess-Limit, ungenutzte Weiterleitungen im Webserver entfernt.
 6. **Firewall im Container**: Router, NAS, der Mac und alles im lokalen Netz sind gesperrt.
    Ohne aktive Firewall startet Brave nicht.
-7. **Abgeriegeltes Fenster** (Keepway.app, Apple WebKit): lädt ausschließlich `127.0.0.1:1111` –
+7. **Abgeriegeltes Fenster** (Glasbox.app, Apple WebKit): lädt ausschließlich `127.0.0.1:1111` –
    Inhaltsregeln sperren jede andere Anfrage (getestet: localhost-Apps, Router, Internet gesperrt).
    Speichert nichts (nicht-persistenter Speicher), keine Downloads, keine Dateiauswahl, keine Kamera,
    kein Mikrofon, keine Pop-ups, keine Verbindung von der Seite zur App.
@@ -160,23 +160,23 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
 | Pfad | Inhalt |
 |---|---|
 | `sb` | Startskript (auch in der App enthalten) |
-| `baue-app.sh` | baut Keepway.app (braucht nur `swiftc`) |
-| `app/Keepway.swift` | die App: Startfenster, abgeriegeltes Stream-Fenster, Beenden-Dialog |
+| `baue-app.sh` | baut Glasbox.app (braucht nur `swiftc`) |
+| `app/Glasbox.swift` | die App: Startfenster, abgeriegeltes Stream-Fenster, Beenden-Dialog |
 | `docker/Dockerfile` | Image auf Basis von `lscr.io/linuxserver/brave` |
 | `docker/policies.json` | Brave-Richtlinien (Vorlage, ID wird pro Klon eingesetzt) |
 | `docker/vorbereiten.py` | Schlüssel erzeugen, Vorlagen füllen, Einstellungen prüfen, Build-Ordner in Library anlegen |
 | `docker/firewall.sh`, `docker/wrapped-brave` | Firewall, Brave-Start mit Sandbox |
 | `docker/seccomp-brave.json` | seccomp-Profil (aus `make-seccomp.py` + Docker-Standardprofil) |
-| `extension/` | Keepway-Erweiterung: Dashboard, Weiterleitungs- und Mining-Wächter |
+| `extension/` | Glasbox-Erweiterung: Dashboard, Weiterleitungs- und Mining-Wächter |
 | `icon/` | Icon (SVG), Icon-Composer-Paket, kompiliertes App-Icon, `baue-icons.sh` (braucht Xcode) |
 
 ## Mitmachen
 
 Issues und Pull Requests sind willkommen – z. B. für eine Linux-Version.
-Mit einem Pull Request erlaubst du Kontaa5, deinen Beitrag in Keepway zu verwenden,
+Mit einem Pull Request erlaubst du Kontaa5, deinen Beitrag in Glasbox zu verwenden,
 zu ändern und weiterzugeben (siehe [LICENSE](LICENSE)).
 
 ## Lizenz
 
 Alle Rechte vorbehalten – siehe [LICENSE](LICENSE). Ansehen und Issues schreiben ist ausdrücklich erwünscht.
-Brave, OrbStack und linuxserver.io gehören ihren jeweiligen Inhabern; Keepway steht in keiner Verbindung zu ihnen.
+Brave, OrbStack und linuxserver.io gehören ihren jeweiligen Inhabern; Glasbox steht in keiner Verbindung zu ihnen.

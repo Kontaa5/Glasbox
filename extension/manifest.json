@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Keepway Wächter",
+  "name": "Glasbox Wächter",
   "version": "1.0.0",
   "description": "Neuer Tab mit IP, Downloads, Uploads, Weiterleitungen und CPU-Verbrauch pro Seite.",
   "key": "__EXT_KEY__ (wird von docker/vorbereiten.py pro Klon eingesetzt)",
@@ -21,7 +21,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Keepway – Übersicht",
+    "default_title": "Glasbox – Übersicht",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"

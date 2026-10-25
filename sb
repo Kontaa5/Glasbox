@@ -1,5 +1,5 @@
 #!/bin/bash
-# Keepway – Brave im Wegwerf-Container
+# Glasbox – Brave im Wegwerf-Container
 #   ./sb          starten (oder Fenster öffnen, falls er läuft)
 #   ./sb labor    starten im Labor-Modus: Downloads/Dateiauswahl erlaubt, aber nur im Container
 #   ./sb stop     beenden – alles im Container wird gelöscht
@@ -9,19 +9,19 @@
 set -euo pipefail
 umask 077   # alle Daten nur für dich lesbar
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # Code (Repo-Ordner oder in Keepway.app)
-NAME=keepway
-IMAGE=keepway:local
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # Code (Repo-Ordner oder in Glasbox.app)
+NAME=glasbox
+IMAGE=glasbox:local
 BASE=lscr.io/linuxserver/brave:latest
 # Port nur auf 127.0.0.1: nur von diesem Mac erreichbar, nicht aus WLAN/Internet.
-# (keepway.orb.local ginge ohne Port, wird aber von VPNs blockiert.) 1111 statt 3000 wegen Next & Co.
+# (glasbox.orb.local ginge ohne Port, wird aber von VPNs blockiert.) 1111 statt 3000 wegen Next & Co.
 PORT=1111
 URL="http://127.0.0.1:${PORT}"
 # Alle Daten (Einstellungen, Schlüssel, Build, Fenster-Profil) bewusst NICHT im Code-Ordner:
 # liegt der auf dem Schreibtisch/in Dokumenten, verlangt macOS Ordnerzugriff. Library braucht keine Freigabe.
-LAUFZEIT="$HOME/Library/Application Support/Keepway"
+LAUFZEIT="$HOME/Library/Application Support/Glasbox"
 ZUSCHAUER="$LAUFZEIT/zuschauer"     # eigenes Brave-Profil nur für das Fenster
-# Eigene, leere Docker-Konfiguration: Keepway liest weder ~/.docker noch einen Schlüsselbund-Helfer
+# Eigene, leere Docker-Konfiguration: Glasbox liest weder ~/.docker noch einen Schlüsselbund-Helfer
 # (dort steht oft "credsStore": "osxkeychain"). Für öffentliche Images braucht es keine Anmeldung.
 export DOCKER_CONFIG="$LAUFZEIT/docker"
 export DOCKER_HOST="unix://$HOME/.orbstack/run/docker.sock"
@@ -33,7 +33,7 @@ rot()   { printf '\033[31m%s\033[0m\n' "$*"; }
 gruen() { printf '\033[32m%s\033[0m\n' "$*"; }
 gelb()  { printf '\033[33m%s\033[0m\n' "$*"; }
 
-# Ja/Nein-Frage: im Terminal per read, aus Keepway.app (kein Terminal) als macOS-Dialog.
+# Ja/Nein-Frage: im Terminal per read, aus Glasbox.app (kein Terminal) als macOS-Dialog.
 # Der Text wird als Argument übergeben, nie in das AppleScript eingebaut.
 frage() {
   if [ -t 0 ]; then
@@ -44,7 +44,7 @@ frage() {
     [ "$(osascript - "$1" <<'AS' 2>/dev/null
 on run argv
   activate
-  display dialog (item 1 of argv) with title "Keepway" buttons {"Nein", "Ja"} default button "Ja"
+  display dialog (item 1 of argv) with title "Glasbox" buttons {"Nein", "Ja"} default button "Ja"
   return button returned of result
 end run
 AS
@@ -86,14 +86,14 @@ build_hash() {
 
 baue() {
   echo "Baue Image (lokal, ohne Download)…"
-  docker build -q --build-arg BASE="$BASE" --label keepway.hash="$(build_hash)" \
+  docker build -q --build-arg BASE="$BASE" --label glasbox.hash="$(build_hash)" \
     -t "$IMAGE" "$LAUFZEIT/build" >/dev/null
   gruen "✓ Image gebaut"
 }
 
 image_aktuell() {
   local ist
-  ist=$(docker image inspect -f '{{index .Config.Labels "keepway.hash"}}' "$IMAGE" 2>/dev/null || true)
+  ist=$(docker image inspect -f '{{index .Config.Labels "glasbox.hash"}}' "$IMAGE" 2>/dev/null || true)
   [ "$(build_hash)" = "$ist" ]
 }
 
@@ -157,16 +157,16 @@ PY
 
 warte_bereit() {
   for _ in $(seq 1 45); do
-    laeuft || fehler "Der Keepway-Container wurde unerwartet beendet. Bitte neu starten."
+    laeuft || fehler "Der Glasbox-Container wurde unerwartet beendet. Bitte neu starten."
     curl -fs --max-time 2 -o /dev/null "$URL/" && return 0
     sleep 1
   done
-  fehler "Keepway antwortet nicht (Details: ./sb log)."
+  fehler "Glasbox antwortet nicht (Details: ./sb log)."
 }
 
 oeffne_fenster() {
   warte_bereit
-  [ -d "/Applications/Brave Browser.app" ] || fehler "Brave fehlt am Mac – Keepway braucht Brave für das Fenster."
+  [ -d "/Applications/Brave Browser.app" ] || fehler "Brave fehlt am Mac – Glasbox braucht Brave für das Fenster."
   zuschauer_profil
   # Eigenes Profil (keine Erweiterungen, keine Cookies deiner anderen Seiten), kein Schlüsselbund.
   # Alles außer 127.0.0.1:PORT läuft auf einen toten Proxy -> das Fenster kann nur mit dem Container
@@ -179,7 +179,7 @@ oeffne_fenster() {
   gruen "✓ Fenster geöffnet"
 }
 
-# start <normal|labor> [ohne-fenster]  – ohne-fenster: nur Container (für die Keepway-App)
+# start <normal|labor> [ohne-fenster]  – ohne-fenster: nur Container (für die Glasbox-App)
 start() {
   local modus="$1" fenster="${2:-mit-fenster}"
   mkdir -p "$LAUFZEIT"
@@ -187,8 +187,8 @@ start() {
   docker_bereit
   if laeuft; then
     local aktiv
-    aktiv=$(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME")
-    [ "$aktiv" = "$modus" ] || fehler "Keepway läuft schon im Modus „$aktiv“. Erst ./sb stop, dann neu starten."
+    aktiv=$(docker inspect -f '{{index .Config.Labels "glasbox.modus"}}' "$NAME")
+    [ "$aktiv" = "$modus" ] || fehler "Glasbox läuft schon im Modus „$aktiv“. Erst ./sb stop, dann neu starten."
     [ "$fenster" = ohne-fenster ] || oeffne_fenster
     return
   fi
@@ -211,7 +211,7 @@ start() {
 
   docker run -d --rm --name "$NAME" --hostname "$NAME" \
     -p "127.0.0.1:${PORT}:3000" \
-    --label keepway.modus="$modus" \
+    --label glasbox.modus="$modus" \
     --shm-size=1g --memory="${ram}g" --cpus="$cpu" --pids-limit=4096 \
     --security-opt no-new-privileges \
     --security-opt seccomp="$LAUFZEIT/build/seccomp-brave.json" \
@@ -259,7 +259,7 @@ stop() {
 status() {
   docker_bereit
   if laeuft; then
-    gruen "läuft: $URL (Modus: $(docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME"))"
+    gruen "läuft: $URL (Modus: $(docker inspect -f '{{index .Config.Labels "glasbox.modus"}}' "$NAME"))"
   else
     echo "läuft nicht"
   fi
@@ -275,7 +275,7 @@ case "${1:-start}" in
   stop) stop;;
   update) update;;
   status) status;;
-  modus) laeuft && docker inspect -f '{{index .Config.Labels "keepway.modus"}}' "$NAME" || true;;
+  modus) laeuft && docker inspect -f '{{index .Config.Labels "glasbox.modus"}}' "$NAME" || true;;
   log) docker logs --tail 80 "$NAME";;
   *) sed -n '2,8p' "$0"; exit 1;;
 esac
