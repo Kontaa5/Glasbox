@@ -1,20 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe6ef"/>
-    </linearGradient>
-    <linearGradient id="schild" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#34c77b"/><stop offset="1" stop-color="#138a4c"/>
-    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe6ef"/></linearGradient>
+    <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#34c77b"/><stop offset="1" stop-color="#138a4c"/></linearGradient>
   </defs>
-  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
-  <rect x="100.5" y="100.5" width="823" height="823" rx="186" fill="none" stroke="#000" stroke-opacity=".08"/>
-  <!-- ankommender Pfeil (gestrichelt = der Angriff) -->
-  <path d="M180 444 L290 444" stroke="#d93025" stroke-width="34" stroke-linecap="round" stroke-dasharray="2 62" fill="none"/>
-  <!-- Schild -->
-  <path d="M512 236 L716 312 V512 C716 652 628 748 512 804 C396 748 308 652 308 512 V312 Z" fill="url(#schild)"/>
-  <path d="M512 236 L716 312 V512 C716 652 628 748 512 804 C396 748 308 652 308 512 V312 Z" fill="none" stroke="#0b5c32" stroke-opacity=".25" stroke-width="6"/>
-  <!-- Pfeil prallt ab und kehrt um ("keep away") -->
-  <path d="M434 600 H554 A78 78 0 0 0 554 444 H464" stroke="#ffffff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M476 384 L396 444 L476 504" stroke="#ffffff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <g id="hintergrund">
+    <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+    <rect x="100.5" y="100.5" width="823" height="823" rx="186" fill="none" stroke="#00000014"/>
+  </g>
+  <!-- Glaskasten = der Container -->
+  <g id="ebene-glas">
+    <rect x="252" y="252" width="520" height="520" rx="110" fill="#e9f7ef" stroke="#34c77b" stroke-width="28"/>
+    <path d="M300 330 L370 300" stroke="#fff" stroke-width="26" stroke-linecap="round" opacity=".9"/>
+  </g>
+  <!-- Globus = das Web, sicher eingeschlossen -->
+  <g id="ebene-globus">
+    <circle cx="512" cy="512" r="170" fill="url(#gr)"/>
+    <ellipse cx="512" cy="512" rx="70" ry="170" fill="none" stroke="#fff" stroke-width="22"/>
+    <path d="M342 512 H682 M370 420 H654 M370 604 H654" stroke="#fff" stroke-width="22" fill="none"/>
+  </g>
 </svg>

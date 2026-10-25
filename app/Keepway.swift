@@ -81,7 +81,7 @@ final class StartController: NSWindowController {
         let info = NSTextField(wrappingLabelWithString:
             "Normal: Downloads und Uploads gesperrt.\nLabor: Downloads erlaubt – sie bleiben im Container und werden beim Beenden gelöscht.")
         info.textColor = .secondaryLabelColor
-        let normal = NSButton(title: "Normal", target: self, action: #selector(normalGewaehlt))
+        let normal = NSButton(title: "🌐 Normal", target: self, action: #selector(normalGewaehlt))
         normal.keyEquivalent = "\r"
         let labor = NSButton(title: "🧪 Labor", target: self, action: #selector(laborGewaehlt))
         knoepfe = [normal, labor]
@@ -122,6 +122,21 @@ final class StartController: NSWindowController {
 
 // MARK: - Stream-Fenster (abgeriegelter WKWebView)
 
+/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R, Ctrl+Cmd+F)
+/// gehen deshalb zuerst ans Menü der App, damit Beenden, Schließen usw. immer funktionieren.
+final class StreamWebView: WKWebView {
+    private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r"]
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let taste = event.charactersIgnoringModifiers?.lowercased() ?? ""
+        let istAppKuerzel = (mods == .command && Self.appKuerzel.contains(taste))
+            || (mods == [.command, .control] && taste == "f")
+        if istAppKuerzel, let menue = NSApp.mainMenu, menue.performKeyEquivalent(with: event) { return true }
+        return super.performKeyEquivalent(with: event)
+    }
+}
+
 final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
     var schliessenGewuenscht: (() -> Void)?
     private(set) var webView: WKWebView!
@@ -140,7 +155,7 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         c.websiteDataStore = .nonPersistent()          // nichts auf die Platte
         c.mediaTypesRequiringUserActionForPlayback = []  // Ton des Streams ohne Extra-Klick
         if let regeln { c.userContentController.add(regeln) }
-        webView = WKWebView(frame: .zero, configuration: c)
+        webView = StreamWebView(frame: .zero, configuration: c)
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsMagnification = false
@@ -153,7 +168,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     func webView(_ v: WKWebView, decidePolicyFor a: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let u = a.request.url
-        let ok = u?.scheme == "http" && u?.host == "127.0.0.1" && u?.port == 1111
+        let ok = (u?.scheme == "http" && u?.host == "127.0.0.1" && u?.port == 1111)
+            || u?.absoluteString == "about:blank"   // nur für die eigene „wird beendet“-Anzeige
         decisionHandler(ok ? .allow : .cancel)
     }
 
