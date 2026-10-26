@@ -23,8 +23,12 @@ COPY icon.png /usr/share/selkies/www/icon.png
 
 # nginx: ungenutzte Weiterleitungen (/devmode -> :5173, /pelorus/ -> :5100) entfernen –
 # sonst könnte ein kompromittierter Prozess dort lauschen und Seiten unter der Zuschauer-Adresse ausliefern.
+# Nur Host 127.0.0.1 annehmen: Seiten im normalen Browser am Mac kommen per DNS-Rebinding
+# (fremder Name -> 127.0.0.1) so nicht einmal an die Oberfläche.
 RUN sed -i -e '/location \/devmode {/,/^  }/d' -e '/location SUBFOLDERpelorus\/ {/,/^  }/d' /defaults/default.conf \
- && ! grep -qE 'devmode|pelorus|5173|5100' /defaults/default.conf
+ && ! grep -qE 'devmode|pelorus|5173|5100' /defaults/default.conf \
+ && sed -i -E 's/^(  listen \[::\]:300[01].*)$/\1\n  if ($host != "127.0.0.1") { return 403; }/' /defaults/default.conf \
+ && test "$(grep -c 'return 403' /defaults/default.conf)" = 2
 
 # chrome-sandbox ohne setuid: Brave nutzt die Namespace-Sandbox (seccomp-brave.json).
 # Klappt die nicht, startet Brave gar nicht, statt still ohne Sandbox zu laufen.

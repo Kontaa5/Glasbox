@@ -21,5 +21,6 @@ done
 cp "$ROOT/icon/glasbox-512.png" "$CODE/icon/"
 find "$CODE" -name '__pycache__' -prune -exec rm -rf {} +
 chmod 755 "$APP/Contents/MacOS/Glasbox" "$CODE/sb"
-codesign --force --sign - "$APP" 2>/dev/null
+# Hardened Runtime: keine fremden Bibliotheken/DYLD-Variablen in die App einschleusbar
+codesign --force --options runtime --sign - "$APP" 2>/dev/null
 echo "✓ Glasbox.app gebaut"

@@ -45,7 +45,8 @@ enum Sb {
         if let h = try? FileHandle(forWritingTo: datei) {
             h.seekToEndOfFile(); h.write(Data(text.utf8)); try? h.close()
         } else {
-            try? Data(text.utf8).write(to: datei)
+            FileManager.default.createFile(atPath: datei.path, contents: Data(text.utf8),
+                                           attributes: [.posixPermissions: 0o600])  // nur für dich lesbar
         }
     }
 
