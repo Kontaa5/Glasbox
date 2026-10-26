@@ -33,6 +33,9 @@ header {
 .labor p { margin: 6px 0 0; }
 [hidden] { display: none !important; }
 #suche { flex: 1; max-width: 640px; }
+.design { display: flex; gap: 2px; margin-left: auto; padding: 3px; border-radius: 10px; background: var(--rand); }
+.design button { border: 0; background: transparent; color: var(--leise); padding: 5px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.design button[aria-pressed="true"] { background: var(--karte); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 #q {
   width: 100%; padding: 10px 14px; border-radius: 10px;
   border: 1px solid var(--rand); background: var(--karte); color: var(--text); font-size: 15px;

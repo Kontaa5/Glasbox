@@ -64,6 +64,17 @@ export async function ladeConfig() {
   };
 }
 
+// Design: Wahl im Dashboard (auto/hell/dunkel, gilt für diese Sitzung) – „auto“ folgt dem Mac
+// bzw. der Einstellung in der Glasbox-App (kommt als config.thema).
+export const DESIGNS = ['auto', 'hell', 'dunkel'];
+
+export async function wendeDesignAn(macThema) {
+  const { design } = await chrome.storage.local.get('design');
+  const wahl = DESIGNS.includes(design) ? design : 'auto';
+  document.documentElement.dataset.thema = wahl === 'auto' ? macThema : wahl;
+  return wahl;
+}
+
 export function kuerzen(text, max = 200) {
   const s = String(text ?? '');
   return s.length > max ? s.slice(0, max - 1) + '…' : s;

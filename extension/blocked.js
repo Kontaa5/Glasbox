@@ -1,6 +1,6 @@
-import { istWebUrl, ladeConfig } from './lib.js';
+import { istWebUrl, ladeConfig, wendeDesignAn } from './lib.js';
 
-ladeConfig().then((c) => { document.documentElement.dataset.thema = c.thema; });
+ladeConfig().then((c) => wendeDesignAn(c.thema));
 
 let daten = {};
 try {

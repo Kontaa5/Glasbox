@@ -270,10 +270,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Aktuelles Aussehen des Macs an das Dashboard im Container geben (über `sb thema`).
+    /// Dashboard-Design (dauerhaft, am Mac gespeichert): auto = wie der Mac, sonst hell/dunkel.
+    private var design: String {
+        get { ["auto", "hell", "dunkel"].contains(UserDefaults.standard.string(forKey: "dashboardDesign") ?? "")
+                ? UserDefaults.standard.string(forKey: "dashboardDesign")! : "auto" }
+        set { UserDefaults.standard.set(newValue, forKey: "dashboardDesign") }
+    }
+
+    /// Gewähltes Design (bzw. bei „auto“ das Aussehen des Macs) ans Dashboard im Container geben.
     private func gibThemaWeiter() {
         let dunkel = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        DispatchQueue.global().async { _ = Sb.ausfuehren(["thema", dunkel ? "dunkel" : "hell"]) }
+        let thema = design == "auto" ? (dunkel ? "dunkel" : "hell") : design
+        DispatchQueue.global().async { _ = Sb.ausfuehren(["thema", thema]) }
+    }
+
+    @objc private func designGewaehlt(_ sender: NSMenuItem) {
+        guard let wahl = sender.representedObject as? String else { return }
+        design = wahl
+        sender.menu?.items.forEach { $0.state = ($0.representedObject as? String) == wahl ? .on : .off }
+        gibThemaWeiter()
     }
 
     private func zeigeStream(_ modus: String) {
@@ -348,6 +363,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ansicht.addItem(withTitle: "Neu verbinden", action: #selector(StreamController.neuLaden(_:)), keyEquivalent: "r")
         let voll = ansicht.addItem(withTitle: "Vollbild", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         voll.keyEquivalentModifierMask = [.command, .control]
+        ansicht.addItem(.separator())
+        let designItem = ansicht.addItem(withTitle: "Dashboard-Design", action: nil, keyEquivalent: "")
+        let designMenue = NSMenu(title: "Dashboard-Design")
+        for (titel, wert) in [("Automatisch (wie der Mac)", "auto"), ("Hell", "hell"), ("Dunkel", "dunkel")] {
+            let i = designMenue.addItem(withTitle: titel, action: #selector(designGewaehlt(_:)), keyEquivalent: "")
+            i.target = self
+            i.representedObject = wert
+            i.state = wert == design ? .on : .off
+        }
+        designItem.submenu = designMenue
         ansichtItem.submenu = ansicht
 
         let fensterItem = NSMenuItem(); haupt.addItem(fensterItem)

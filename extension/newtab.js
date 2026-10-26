@@ -1,4 +1,4 @@
-import { ladeConfig, istWebUrl, kuerzen } from './lib.js';
+import { ladeConfig, istWebUrl, kuerzen, wendeDesignAn, DESIGNS } from './lib.js';
 
 // Alles wird mit textContent / createElement gebaut – nie innerHTML mit fremden Daten.
 const $ = (id) => document.getElementById(id);
@@ -165,8 +165,21 @@ async function zeigeAlles(config) {
   zeigePerf(d.perf || {}, config);
 }
 
+async function zeigeDesign() {
+  const wahl = await wendeDesignAn(config.thema);
+  for (const b of document.querySelectorAll('.design button')) {
+    b.setAttribute('aria-pressed', String(b.dataset.design === wahl));
+  }
+}
+
+for (const b of document.querySelectorAll('.design button')) {
+  b.addEventListener('click', async () => {
+    if (DESIGNS.includes(b.dataset.design)) await chrome.storage.local.set({ design: b.dataset.design });
+  });
+}
+
 function zeigeModus(config) {
-  document.documentElement.dataset.thema = config.thema;
+  zeigeDesign();
   $('labor').hidden = !config.labor;
   $('dl-info').textContent = config.labor
     ? 'Labor-Modus: Dateien liegen nur im Container (~/Downloads) und werden beim Beenden gelöscht.'
@@ -188,5 +201,6 @@ chrome.storage.onChanged.addListener(async (_, bereich) => {
     ladeIp(config);
     zeigeLesezeichen(config);
   }
+  if (bereich === 'local') zeigeDesign();
   if (bereich === 'local' || bereich === 'managed') zeigeAlles(config);
 });

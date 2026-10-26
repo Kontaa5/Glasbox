@@ -26,6 +26,9 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   Dazu ist WebAssembly komplett aus (darüber laufen fast alle Browser-Miner).
 - **Dashboard im neuen Tab**: deine aktuelle IP mit Anbieter und Ort (Warnung, wenn das VPN aus ist),
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
+- **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
+  oder dauerhaft im App-Menü unter Darstellung → Dashboard-Design.
+- **Scharfes Bild**: Stream in Retina-Auflösung, Brave im Container mit 2-facher Skalierung.
 - **VPN-Check beim Start**.
 - **Labor-Modus** zum Herunterladen und Prüfen verdächtiger Dateien – ohne dass sie den Container verlassen.
 - **Glasbox.app**: eigenes Fenster mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst).
