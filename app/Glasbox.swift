@@ -135,6 +135,32 @@ final class StreamWebView: WKWebView {
         if istAppKuerzel, let menue = NSApp.mainMenu, menue.performKeyEquivalent(with: event) { return true }
         return super.performKeyEquivalent(with: event)
     }
+
+    // Mauszeiger nach 10 s ohne Bewegung ausblenden (macOS zeigt ihn bei der nächsten Bewegung wieder).
+    // Die App macht das selbst, weil Seiten im Container es nicht zuverlässig tun.
+    private var mausMonitor: Any?
+    private var ausblenden: DispatchWorkItem?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil, mausMonitor == nil else { return }
+        mausMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
+                       .leftMouseDown, .rightMouseDown, .scrollWheel]
+        ) { [weak self] e in self?.planeAusblenden(); return e }
+        planeAusblenden()
+    }
+
+    private func planeAusblenden() {
+        ausblenden?.cancel()
+        let job = DispatchWorkItem { [weak self] in
+            guard let self, let w = self.window, w.isKeyWindow,
+                  self.bounds.contains(self.convert(w.mouseLocationOutsideOfEventStream, from: nil)) else { return }
+            NSCursor.setHiddenUntilMouseMoves(true)
+        }
+        ausblenden = job
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: job)
+    }
 }
 
 final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
@@ -154,6 +180,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         let c = WKWebViewConfiguration()
         c.websiteDataStore = .nonPersistent()          // nichts auf die Platte
         c.mediaTypesRequiringUserActionForPlayback = []  // Ton des Streams ohne Extra-Klick
+        c.allowsAirPlayForMediaPlayback = false
+        c.preferences.isElementFullscreenEnabled = false  // Vollbild nur über das Fenster (Ctrl+Cmd+F)
         if let regeln { c.userContentController.add(regeln) }
         webView = StreamWebView(frame: .zero, configuration: c)
         webView.navigationDelegate = self

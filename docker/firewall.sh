@@ -1,11 +1,11 @@
 #!/usr/bin/with-contenv bash
-# Sperrt aus dem Container alle Ziele im lokalen Netz (Router, NAS, der Mac selbst).
+# Sperrt aus dem Container alle Ziele im lokalen Netz (Router, NAS, der Mac selbst, OrbStack-Netz 198.18/15).
 # Erlaubt: Internet, DNS-Server des Containers, Antworten auf eingehende Verbindungen (Bildstream).
 # Fail-closed: Nur wenn alles klappt, wird /run/sb-firewall-ok angelegt – ohne die Datei startet Brave nicht.
 set -euo pipefail
 rm -f /run/sb-firewall-ok
 
-PRIVATE_V4="10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 169.254.0.0/16 0.0.0.0/8 224.0.0.0/4 240.0.0.0/4"
+PRIVATE_V4="10.0.0.0/8 198.18.0.0/15 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 169.254.0.0/16 0.0.0.0/8 224.0.0.0/4 240.0.0.0/4"
 PRIVATE_V6="fc00::/7 fe80::/10 ff00::/8"
 DNS_SERVERS=$(awk '/^nameserver/ {print $2}' /etc/resolv.conf)
 

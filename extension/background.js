@@ -105,8 +105,10 @@ async function cpuProzent() {
 }
 
 async function aktualisierePerf(seite, cpu, signale) {
+  if (!seite || seite === '__proto__' || seite === 'constructor' || seite === 'prototype') return;
   const { perf = {} } = await chrome.storage.local.get('perf');
-  const e = perf[seite] || { seite, messungen: 0, summe: 0, max: 0, worker: 0, wasm: 0, hoch: false };
+  // Seitenname kommt aus der URL – nie Objekt-Interna wie __proto__ als Schlüssel nutzen
+  const e = (Object.hasOwn(perf, seite) && perf[seite]) || { seite, messungen: 0, summe: 0, max: 0, worker: 0, wasm: 0, hoch: false };
   if (cpu !== null) {
     e.messungen += 1;
     e.summe += cpu;

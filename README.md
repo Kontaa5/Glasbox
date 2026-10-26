@@ -29,6 +29,7 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
   oder dauerhaft im App-Menü unter Darstellung → Dashboard-Design.
 - **Scharfes Bild**: Stream in Retina-Auflösung, Brave im Container mit 2-facher Skalierung.
+- **Mauszeiger blendet aus** nach 10 s ohne Bewegung (kommt bei Bewegung sofort zurück).
 - **VPN-Check beim Start**.
 - **Labor-Modus** zum Herunterladen und Prüfen verdächtiger Dateien – ohne dass sie den Container verlassen.
 - **Glasbox.app**: eigenes Fenster mit eigenem Icon (hell/dunkel/getönt, macOS wählt selbst).
@@ -131,7 +132,7 @@ Das Fenster zeigt nur einen **Bildstream**. Der Code der Webseiten läuft aussch
 4. **Brave-Sandbox an** (im Basis-Image aus): Namespace + seccomp. Fehlt sie, startet Brave nicht.
 5. **Container gehärtet**: fast alle Linux-Rechte entfernt, `no-new-privileges`, kein sudo, kein Terminal,
    Speicher-/CPU-/Prozess-Limit, ungenutzte Weiterleitungen im Webserver entfernt.
-6. **Firewall im Container**: Router, NAS, der Mac und alles im lokalen Netz sind gesperrt.
+6. **Firewall im Container**: Router, NAS, der Mac, das OrbStack-Netz und alles im lokalen Netz sind gesperrt.
    Ohne aktive Firewall startet Brave nicht.
 7. **Abgeriegeltes Fenster** (Glasbox.app, Apple WebKit): lädt ausschließlich `127.0.0.1:1111` –
    Inhaltsregeln sperren jede andere Anfrage (getestet: localhost-Apps, Router, Internet gesperrt).

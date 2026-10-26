@@ -50,6 +50,9 @@
   "BraveStatsPingEnabled": false,
   "BraveWebDiscoveryEnabled": false,
   "TranslateEnabled": false,
+  "EnableMediaRouter": false,
+  "SpellCheckServiceEnabled": false,
+  "SearchSuggestEnabled": false,
   "ExtensionSettings": {
     "__EXT_ID__": {
       "toolbar_pin": "force_pinned"
