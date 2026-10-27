@@ -135,14 +135,28 @@ final class StreamWebView: WKWebView {
             || (mods == [.command, .control] && taste == "f")
         if istAppKuerzel, let menue = NSApp.mainMenu, menue.performKeyEquivalent(with: event) { return true }
         if mods.subtracting(.shift) == .command, let stream = window?.windowController as? StreamController {
+            // false = Taste geht an Brave (Seiten-Zoom), wenn die Oberfläche am Anschlag ist
             switch taste {
-            case "+", "=": stream.groesser(nil); return true
-            case "-": stream.kleiner(nil); return true
-            case "0": stream.originalgroesse(nil); return true
+            case "+", "=": if stream.zoome(1) { return true }
+            case "-": if stream.zoome(-1) { return true }
+            case "0": if stream.zoome(0) { return true }
             default: break
             }
         }
         return super.performKeyEquivalent(with: event)
+    }
+
+    // Mausrad (keine Trackpad-Feinwerte): WebKit liefert beschleunigte Kommazahlen, die der Stream
+    // falsch einordnet. Die App gibt stattdessen echte Rasten (Zeilen-Ereignisse) an das Seitenskript;
+    // Brave im Container scrollt jede Raste selbst weich (--enable-smooth-scrolling). Nur Zahlen.
+    override func scrollWheel(with event: NSEvent) {
+        let mods = event.modifierFlags.intersection([.control, .command, .option])
+        guard !event.hasPreciseScrollingDeltas, mods.isEmpty else { return super.scrollWheel(with: event) }
+        let raste = { (wert: CGFloat) -> Double in max(-20, min(20, Double(-wert))) }
+        let dx = raste(event.scrollingDeltaX), dy = raste(event.scrollingDeltaY)
+        guard dx.isFinite, dy.isFinite, dx != 0 || dy != 0 else { return }
+        let p = convert(event.locationInWindow, from: nil)
+        evaluateJavaScript("window.glasboxRaste && window.glasboxRaste(\(dx), \(dy), \(Double(p.x)), \(Double(bounds.height - p.y)))")
     }
 
     // Mauszeiger nach 10 s ohne Bewegung ausblenden (macOS zeigt ihn bei der nächsten Bewegung wieder).
@@ -205,7 +219,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
 
     // Trackpad-Scrollen kommt in WebKit mit Kommazahlen an – der Stream hält das für Mausrad-Rasten
     // und scrollt ruckelig in Sprüngen. Ganzzahlig weitergereicht (Rest wird mitgezählt) scrollt
-    // Brave pixelgenau. Reines Seitenskript ohne Verbindung zur App; Pinch-Zoom (Ctrl) bleibt unverändert.
+    // Brave pixelgenau. Mausrad: glasboxRaste (von StreamWebView) schickt echte Rasten.
+    // Reines Seitenskript ohne Verbindung zur App; Pinch-Zoom (Ctrl) bleibt unverändert.
     static let fluessigScrollen = """
     (() => {
       let restX = 0, restY = 0;
@@ -223,6 +238,20 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
           screenX: e.screenX, screenY: e.screenY, shiftKey: e.shiftKey, altKey: e.altKey,
           metaKey: e.metaKey, bubbles: true, cancelable: true, composed: true }));
       }, { capture: true, passive: false });
+
+      // Jede Mausrad-Bewegung = mindestens eine Raste (langsame Klicks liefern macOS oft nur 0,1),
+      // schnelle beschleunigte Bewegungen mehrere (höchstens 10).
+      const rasten = (v) => (v === 0 ? 0 : Math.sign(v) * Math.min(10, Math.max(1, Math.round(Math.abs(v)))));
+      window.glasboxRaste = (x, y, px, py) => {
+        if (![x, y, px, py].every(Number.isFinite)) return;
+        const rx = rasten(x), ry = rasten(y);
+        const ziel = document.elementFromPoint(px, py) || document.body;
+        for (let i = 0; i < Math.min(10, Math.max(Math.abs(rx), Math.abs(ry))); i++) {
+          ziel.dispatchEvent(new WheelEvent('wheel', {
+            deltaX: i < Math.abs(rx) ? Math.sign(rx) : 0, deltaY: i < Math.abs(ry) ? Math.sign(ry) : 0,
+            deltaMode: 1, clientX: px, clientY: py, bubbles: true, cancelable: true, composed: true }));
+        }
+      };
     })();
     """
 
@@ -233,21 +262,42 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
 
     /// Zusätzliche Stufen gegenüber „passend zum Bildschirm“ (Retina 2×, sonst 1×), dauerhaft gespeichert.
     private var zoomStufe: Int {
-        get { max(-4, min(4, UserDefaults.standard.integer(forKey: "zoomStufe"))) }
-        set { UserDefaults.standard.set(max(-4, min(4, newValue)), forKey: "zoomStufe") }
+        get { UserDefaults.standard.integer(forKey: "zoomStufe") }
+        set { UserDefaults.standard.set(newValue, forKey: "zoomStufe") }
     }
+    /// Index von 192 (Retina) bzw. 96 in stufenDpi
+    private var basis: Int { (window?.backingScaleFactor ?? 2) >= 1.5 ? 4 : 0 }
+    /// Aktueller Index – immer innerhalb der Liste, auch wenn der gespeicherte Wert alt/zu groß ist.
+    private var index: Int { max(0, min(Self.stufenDpi.count - 1, basis + zoomStufe)) }
+    /// Seiten-Zoom, den Brave gerade hat (Tasten, die durchgereicht wurden); nur für diese Sitzung.
+    private var seitenZoom = 0
 
     /// Gewünschte Skalierung an den Stream geben. Nur eine Zahl aus der festen Liste – keine fremden Daten.
     private func wendeGroesseAn() {
-        let basis = (window?.backingScaleFactor ?? 2) >= 1.5 ? 4 : 0          // Index von 192 bzw. 96
-        let dpi = Self.stufenDpi[max(0, min(Self.stufenDpi.count - 1, basis + zoomStufe))]
         webView.evaluateJavaScript(
-            "window.postMessage({type:'settings',settings:{scaling_dpi:\(dpi)}},location.origin)")
+            "window.postMessage({type:'settings',settings:{scaling_dpi:\(Self.stufenDpi[index])}},location.origin)")
     }
 
-    @objc func groesser(_ sender: Any?) { zoomStufe += 1; wendeGroesseAn() }
-    @objc func kleiner(_ sender: Any?) { zoomStufe -= 1; wendeGroesseAn() }
-    @objc func originalgroesse(_ sender: Any?) { zoomStufe = 0; wendeGroesseAn() }
+    /// Cmd+Plus (1), Cmd+Minus (-1), Cmd+0 (0). Erst die ganze Oberfläche; am Anschlag (z. B. 1× auf einem
+    /// normalen Monitor) bzw. bei Cmd+0 geht die Taste zusätzlich an Brave (Seiten-Zoom) – Rückgabe false.
+    func zoome(_ richtung: Int) -> Bool {
+        if richtung == 0 {
+            zoomStufe = 0; seitenZoom = 0; wendeGroesseAn()
+            return false                                    // Brave setzt auch den Seiten-Zoom zurück
+        }
+        if seitenZoom != 0 && (seitenZoom < 0) == (richtung > 0) {
+            seitenZoom += richtung; return false            // erst den Seiten-Zoom zurücknehmen
+        }
+        let ziel = index + richtung
+        guard Self.stufenDpi.indices.contains(ziel) else { seitenZoom += richtung; return false }
+        zoomStufe = ziel - basis
+        wendeGroesseAn()
+        return true
+    }
+
+    @objc func groesser(_ sender: Any?) { _ = zoome(1) }
+    @objc func kleiner(_ sender: Any?) { _ = zoome(-1) }
+    @objc func originalgroesse(_ sender: Any?) { _ = zoome(0) }
 
     // Nach dem Laden (Stream braucht kurz bis zur Verbindung) und beim Wechsel Retina <-> normaler Monitor.
     func webView(_ v: WKWebView, didFinish n: WKNavigation!) {
@@ -456,9 +506,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ansicht = NSMenu(title: "Darstellung")
         ansicht.addItem(withTitle: "Neu verbinden", action: #selector(StreamController.neuLaden(_:)), keyEquivalent: "r")
         ansicht.addItem(.separator())
-        ansicht.addItem(withTitle: "Größer", action: #selector(StreamController.groesser(_:)), keyEquivalent: "+")
-        ansicht.addItem(withTitle: "Kleiner", action: #selector(StreamController.kleiner(_:)), keyEquivalent: "-")
-        ansicht.addItem(withTitle: "Originalgröße", action: #selector(StreamController.originalgroesse(_:)), keyEquivalent: "0")
+        // Ohne Tastenkürzel im Menü: Cmd+Plus/Minus/0 behandelt StreamWebView (sonst doppelt)
+        ansicht.addItem(withTitle: "Größer  (⌘+)", action: #selector(StreamController.groesser(_:)), keyEquivalent: "")
+        ansicht.addItem(withTitle: "Kleiner  (⌘−)", action: #selector(StreamController.kleiner(_:)), keyEquivalent: "")
+        ansicht.addItem(withTitle: "Originalgröße  (⌘0)", action: #selector(StreamController.originalgroesse(_:)), keyEquivalent: "")
         ansicht.addItem(.separator())
         let voll = ansicht.addItem(withTitle: "Vollbild", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         voll.keyEquivalentModifierMask = [.command, .control]

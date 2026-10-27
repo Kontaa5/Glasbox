@@ -23,6 +23,7 @@ fi
 
 exec ${BIN} \
   --no-first-run \
+  --enable-smooth-scrolling \
   --password-store=basic \
   --simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT' \
   --start-maximized \

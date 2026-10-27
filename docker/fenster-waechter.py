@@ -2,8 +2,8 @@
 """Hält das Brave-Fenster im Container maximiert (läuft als abc, gestartet von wrapped-brave).
 
 Brave zeichnet seine Titelleiste selbst: Doppelklick oder Ziehen an der Tab-Leiste löst das
-Fenster aus dem Vollbild, und labwc kann das nicht verbieten. Der Wächter fragt labwc zweimal
-pro Sekunde (IPC-Socket, nur lesen) und maximiert ein gelöstes Fenster per Kürzel Super+F23
+Fenster aus dem Vollbild, und labwc kann das nicht verbieten. Der Wächter fragt labwc etwa
+7-mal pro Sekunde (IPC-Socket, nur lesen) und maximiert ein gelöstes Fenster per Kürzel Super+F23
 wieder (in docker/labwc.xml belegt).
 """
 import json
@@ -34,7 +34,7 @@ def fenster():
 
 
 while True:
-    time.sleep(0.5)
+    time.sleep(0.15)
     try:
         for w in fenster():
             if (isinstance(w, dict) and w.get("focused") and not w.get("maximized")
