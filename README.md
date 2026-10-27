@@ -29,9 +29,8 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
   oder dauerhaft im App-Menü unter Darstellung → Dashboard-Design.
 - **Scharfes Bild**: Skalierung folgt dem Bildschirm (Retina 2×, normaler Monitor 1×), auch beim Wechsel.
-- **Größe der ganzen Oberfläche** (Tab-Leiste, Adresszeile und Seite zusammen): **Cmd+Plus / Cmd+Minus / Cmd+0**
-  oder Darstellung → Größer/Kleiner/Originalgröße – wird gespeichert. Am Anschlag (z. B. 1× auf einem
-  normalen Monitor) zoomt Brave mit denselben Tasten die Seite.
+- **Brave-Größe** (Tabs, Adresszeile und Seite zusammen): Darstellung → Brave-Größe, wird gespeichert.
+  **Cmd+Plus / Cmd+Minus / Cmd+0** zoomt wie gewohnt nur die Seite.
 - **Fenster im Container bleibt fest** maximiert – Ziehen und Doppelklick auf die Tab-Leiste sind im Container gesperrt.
   Immer nur ein Brave-Fenster: herausgezogene Tabs und Strg+N landen als Tab im Hauptfenster, Inkognito ist aus.
 - **Flüssiges Scrollen** mit Trackpad (pixelgenau) und Maus (Brave scrollt jede Raste weich).

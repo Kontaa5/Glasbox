@@ -124,7 +124,7 @@ final class StartController: NSWindowController {
 // MARK: - Stream-Fenster (abgeriegelter WKWebView)
 
 /// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R, Ctrl+Cmd+F,
-/// Cmd+Plus/Minus/0 für die Größe) gehen deshalb zuerst an die App, damit sie immer funktionieren.
+/// gehen deshalb zuerst an die App, damit sie immer funktionieren. Cmd+Plus/Minus/0 gehen an Brave (Seiten-Zoom).
 final class StreamWebView: WKWebView {
     private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r"]
 
@@ -134,15 +134,6 @@ final class StreamWebView: WKWebView {
         let istAppKuerzel = (mods == .command && Self.appKuerzel.contains(taste))
             || (mods == [.command, .control] && taste == "f")
         if istAppKuerzel, let menue = NSApp.mainMenu, menue.performKeyEquivalent(with: event) { return true }
-        if mods.subtracting(.shift) == .command, let stream = window?.windowController as? StreamController {
-            // false = Taste geht an Brave (Seiten-Zoom), wenn die Oberfläche am Anschlag ist
-            switch taste {
-            case "+", "=": if stream.zoome(1) { return true }
-            case "-": if stream.zoome(-1) { return true }
-            case "0": if stream.zoome(0) { return true }
-            default: break
-            }
-        }
         return super.performKeyEquivalent(with: event)
     }
 
@@ -186,7 +177,7 @@ final class StreamWebView: WKWebView {
     }
 }
 
-final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
+final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, NSMenuItemValidation {
     var schliessenGewuenscht: (() -> Void)?
     private(set) var webView: WKWebView!
 
@@ -255,59 +246,44 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     })();
     """
 
-    // MARK: Größe (ganze Oberfläche im Container: Tab-Leiste, Adresszeile und Seite)
+    // MARK: Brave-Größe (ganze Oberfläche im Container: Tabs, Adresszeile und Seite)
+    // Feste Einstellung im Menü Darstellung – Cmd+Plus/Minus zoomt nur die Seite (macht Brave selbst).
 
     /// Skalierung, die der Stream kennt (96 = 1×, 192 = 2×); Schritte zu 24.
     private static let stufenDpi = [96, 120, 144, 168, 192, 216, 240, 264, 288]
+    /// Wählbare Größen in Prozent von „passend zum Bildschirm“ (Retina 2×, sonst 1×).
+    static let groessen = [75, 88, 100, 112, 125, 150]
 
-    /// Zusätzliche Stufen gegenüber „passend zum Bildschirm“ (Retina 2×, sonst 1×), dauerhaft gespeichert.
-    private var zoomStufe: Int {
-        get { UserDefaults.standard.integer(forKey: "zoomStufe") }
-        set { UserDefaults.standard.set(newValue, forKey: "zoomStufe") }
+    private var braveGroesse: Int {
+        get { let g = UserDefaults.standard.integer(forKey: "braveGroesse"); return Self.groessen.contains(g) ? g : 100 }
+        set { UserDefaults.standard.set(newValue, forKey: "braveGroesse") }
     }
-    /// Index von 192 (Retina) bzw. 96 in stufenDpi
-    private var basis: Int { (window?.backingScaleFactor ?? 2) >= 1.5 ? 4 : 0 }
-    /// Aktueller Index – immer innerhalb der Liste, auch wenn der gespeicherte Wert alt/zu groß ist.
-    private var index: Int { max(0, min(Self.stufenDpi.count - 1, basis + zoomStufe)) }
-    /// Seiten-Zoom, den Brave gerade hat (Tasten, die durchgereicht wurden); nur für diese Sitzung.
-    private var seitenZoom = 0
+    private var basisDpi: Int { (window?.backingScaleFactor ?? 2) >= 1.5 ? 192 : 96 }
 
-    /// Schnelles Mehrfach-Drücken: erst 0,35 s nach der letzten Taste anwenden (sonst überholen sich
-    /// die Größenwechsel im Container und Brave bleibt in der alten Größe hängen).
-    private var groesseSpaeter: DispatchWorkItem?
-    private func wendeGroesseVerzoegertAn() {
-        groesseSpaeter?.cancel()
-        let job = DispatchWorkItem { [weak self] in self?.wendeGroesseAn() }
-        groesseSpaeter = job
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: job)
+    /// DPI für eine Größe – nächster Wert aus der Liste (unter 1× gibt es nicht).
+    private func dpi(fuer prozent: Int) -> Int {
+        let ziel = Double(basisDpi * prozent) / 100
+        return Self.stufenDpi.min { abs(Double($0) - ziel) < abs(Double($1) - ziel) }!
     }
 
     /// Gewünschte Skalierung an den Stream geben. Nur eine Zahl aus der festen Liste – keine fremden Daten.
     private func wendeGroesseAn() {
         webView.evaluateJavaScript(
-            "window.postMessage({type:'settings',settings:{scaling_dpi:\(Self.stufenDpi[index])}},location.origin)")
+            "window.postMessage({type:'settings',settings:{scaling_dpi:\(dpi(fuer: braveGroesse))}},location.origin)")
     }
 
-    /// Cmd+Plus (1), Cmd+Minus (-1), Cmd+0 (0). Erst die ganze Oberfläche; am Anschlag (z. B. 1× auf einem
-    /// normalen Monitor) bzw. bei Cmd+0 geht die Taste zusätzlich an Brave (Seiten-Zoom) – Rückgabe false.
-    func zoome(_ richtung: Int) -> Bool {
-        if richtung == 0 {
-            zoomStufe = 0; seitenZoom = 0; wendeGroesseVerzoegertAn()
-            return false                                    // Brave setzt auch den Seiten-Zoom zurück
-        }
-        if seitenZoom != 0 && (seitenZoom < 0) == (richtung > 0) {
-            seitenZoom += richtung; return false            // erst den Seiten-Zoom zurücknehmen
-        }
-        let ziel = index + richtung
-        guard Self.stufenDpi.indices.contains(ziel) else { seitenZoom += richtung; return false }
-        zoomStufe = ziel - basis
-        wendeGroesseVerzoegertAn()
-        return true
+    @objc func braveGroesseGewaehlt(_ sender: NSMenuItem) {
+        guard let p = sender.representedObject as? Int, Self.groessen.contains(p) else { return }
+        braveGroesse = p
+        wendeGroesseAn()
     }
 
-    @objc func groesser(_ sender: Any?) { _ = zoome(1) }
-    @objc func kleiner(_ sender: Any?) { _ = zoome(-1) }
-    @objc func originalgroesse(_ sender: Any?) { _ = zoome(0) }
+    // Häkchen bei der aktuellen Größe; Größen unter 1× (normaler Monitor) sind nicht möglich -> grau.
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        guard item.action == #selector(braveGroesseGewaehlt(_:)), let p = item.representedObject as? Int else { return true }
+        item.state = p == braveGroesse ? .on : .off
+        return p >= 100 || basisDpi > 96
+    }
 
     // Nach dem Laden (Stream braucht kurz bis zur Verbindung) und beim Wechsel Retina <-> normaler Monitor.
     func webView(_ v: WKWebView, didFinish n: WKNavigation!) {
@@ -516,10 +492,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ansicht = NSMenu(title: "Darstellung")
         ansicht.addItem(withTitle: "Neu verbinden", action: #selector(StreamController.neuLaden(_:)), keyEquivalent: "r")
         ansicht.addItem(.separator())
-        // Ohne Tastenkürzel im Menü: Cmd+Plus/Minus/0 behandelt StreamWebView (sonst doppelt)
-        ansicht.addItem(withTitle: "Größer  (⌘+)", action: #selector(StreamController.groesser(_:)), keyEquivalent: "")
-        ansicht.addItem(withTitle: "Kleiner  (⌘−)", action: #selector(StreamController.kleiner(_:)), keyEquivalent: "")
-        ansicht.addItem(withTitle: "Originalgröße  (⌘0)", action: #selector(StreamController.originalgroesse(_:)), keyEquivalent: "")
+        // Brave-Größe (Tabs, Adresszeile, Seite); Cmd+Plus/Minus/0 zoomt nur die Seite
+        let groesseItem = ansicht.addItem(withTitle: "Brave-Größe", action: nil, keyEquivalent: "")
+        let groesseMenue = NSMenu(title: "Brave-Größe")
+        for p in StreamController.groessen {
+            let i = groesseMenue.addItem(withTitle: p == 100 ? "100 % (passend zum Bildschirm)" : "\(p) %",
+                                         action: #selector(StreamController.braveGroesseGewaehlt(_:)), keyEquivalent: "")
+            i.representedObject = p
+        }
+        groesseItem.submenu = groesseMenue
         ansicht.addItem(.separator())
         let voll = ansicht.addItem(withTitle: "Vollbild", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         voll.keyEquivalentModifierMask = [.command, .control]
