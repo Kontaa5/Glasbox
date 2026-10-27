@@ -29,7 +29,7 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Aussehen** (Darstellung → Aussehen …, Cmd+Komma): Dashboard-Design (Auto/Hell/Dunkel), Schrift und
   Schriftgröße sowie die Brave-Größe (Tabs, Adresszeile und Seite zusammen). Gilt bis zum Beenden;
   „Für einstellungen.json kopieren“ erzeugt den Text, mit dem es bei jedem Start gilt.
-  Auch über ⚙︎ im Startfenster. Im Dashboard: Auto/☀︎/☾ und ⚙︎ (Schrift, Größe) für die Sitzung.
+  Auch über ⚙︎ im Startfenster. Im Dashboard unter ⚙︎: Design, Schrift, Größe für die Sitzung.
   **Cmd+Plus/Minus/0** zoomt nur die Seite.
 - **Scharfes Bild**: Skalierung folgt dem Bildschirm (Retina 2×, normaler Monitor 1×), auch beim Wechsel.
 - **Fenster im Container bleibt fest** maximiert – Ziehen und Doppelklick auf die Tab-Leiste sind im Container gesperrt.
