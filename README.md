@@ -32,7 +32,7 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Größe der ganzen Oberfläche** (Tab-Leiste, Adresszeile und Seite zusammen): **Cmd+Plus / Cmd+Minus / Cmd+0**
   oder Darstellung → Größer/Kleiner/Originalgröße – wird gespeichert. Am Anschlag (z. B. 1× auf einem
   normalen Monitor) zoomt Brave mit denselben Tasten die Seite.
-- **Fenster im Container bleibt fest** maximiert – Ziehen oder Doppelklick auf die Tab-Leiste verschiebt nichts.
+- **Fenster im Container bleibt fest** maximiert – Doppelklick auf die Tab-Leiste fängt die App ab, ein Wächter im Container maximiert sofort wieder.
 - **Flüssiges Scrollen** mit Trackpad (pixelgenau) und Maus (Brave scrollt jede Raste weich).
 - **Mauszeiger blendet aus** nach 10 s ohne Bewegung (kommt bei Bewegung sofort zurück).
 - **VPN-Check beim Start**.

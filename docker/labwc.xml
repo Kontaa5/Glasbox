@@ -24,8 +24,10 @@
 
   <keyboard>
     <!-- Keine Fenster-Kürzel (sonst lädt labwc seine Standardkürzel) – nur dieses eine:
-         Super+F23 maximiert wieder, ausgelöst vom Fenster-Wächter (docker/fenster-waechter.py). -->
+         Super+F23/F22 maximieren wieder, ausgelöst vom Fenster-Wächter (docker/fenster-waechter.py). -->
     <keybind key="W-F23"><action name="Maximize" /></keybind>
+    <!-- Super+F22: neu maximieren, falls Brave nach einem Größenwechsel in der alten Größe hängt -->
+    <keybind key="W-F22"><action name="UnMaximize" /><action name="Maximize" /></keybind>
   </keyboard>
 
   <mouse>
