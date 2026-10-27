@@ -15,7 +15,7 @@ cp "$ROOT/icon/kompiliert/AppIcon.icns" "$ROOT/icon/kompiliert/Assets.car" "$APP
 swiftc -O "$ROOT/app/Glasbox.swift" -o "$APP/Contents/MacOS/Glasbox"
 cp "$ROOT/sb" "$ROOT/einstellungen.beispiel.json" "$CODE/"
 cp -R "$ROOT/extension" "$CODE/"
-for f in Dockerfile policies.json updates.xml wrapped-brave firewall.sh seccomp-brave.json vorbereiten.py; do
+for f in Dockerfile policies.json updates.xml wrapped-brave firewall.sh labwc.xml fenster-waechter.py seccomp-brave.json vorbereiten.py; do
   cp "$ROOT/docker/$f" "$CODE/docker/"
 done
 cp "$ROOT/icon/glasbox-512.png" "$CODE/icon/"

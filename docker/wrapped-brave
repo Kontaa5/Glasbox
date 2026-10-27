@@ -10,6 +10,9 @@ if [ ! -f /run/sb-firewall-ok ]; then
   exit 1
 fi
 
+# Fenster-Wächter: hält Brave maximiert (läuft weiter, wenn Brave neu startet)
+pgrep -f glasbox-fenster > /dev/null || setsid /usr/bin/python3 -I /usr/local/bin/glasbox-fenster < /dev/null > /dev/null 2>&1 &
+
 if pgrep brave > /dev/null; then
   rm -f "$HOME"/.config/BraveSoftware/Brave-Browser/Singleton*
 fi

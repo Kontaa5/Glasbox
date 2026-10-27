@@ -54,7 +54,7 @@ manifest["key"] = ext_key
 json.dump(manifest, open(manifest_pfad, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 shutil.copy(pem, os.path.join(build, "extension.pem"))
 os.chmod(os.path.join(build, "extension.pem"), 0o600)
-for quelle_rel, ziel_name in (("docker/Dockerfile", "Dockerfile"), ("docker/wrapped-brave", "wrapped-brave"), ("docker/firewall.sh", "firewall.sh"),
+for quelle_rel, ziel_name in (("docker/Dockerfile", "Dockerfile"), ("docker/wrapped-brave", "wrapped-brave"), ("docker/firewall.sh", "firewall.sh"), ("docker/labwc.xml", "labwc.xml"), ("docker/fenster-waechter.py", "fenster-waechter.py"),
                               ("docker/seccomp-brave.json", "seccomp-brave.json"), ("icon/glasbox-512.png", "icon.png")):
     shutil.copy(os.path.join(ordner, quelle_rel), os.path.join(build, ziel_name))
 

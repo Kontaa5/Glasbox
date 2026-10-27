@@ -20,6 +20,8 @@ COPY --from=packer /tmp/pack/ext.crx /opt/sb-crx/sb.crx
 COPY wrapped-brave /usr/bin/wrapped-brave
 COPY firewall.sh /custom-cont-init.d/10-firewall
 COPY icon.png /usr/share/selkies/www/icon.png
+COPY labwc.xml /defaults/labwc.xml
+COPY fenster-waechter.py /usr/local/bin/glasbox-fenster
 
 # nginx: ungenutzte Weiterleitungen (/devmode -> :5173, /pelorus/ -> :5100) entfernen –
 # sonst könnte ein kompromittierter Prozess dort lauschen und Seiten unter der Zuschauer-Adresse ausliefern.
@@ -33,6 +35,6 @@ RUN sed -i -e '/location \/devmode {/,/^  }/d' -e '/location SUBFOLDERpelorus\/ 
 # chrome-sandbox ohne setuid: Brave nutzt die Namespace-Sandbox (seccomp-brave.json).
 # Klappt die nicht, startet Brave gar nicht, statt still ohne Sandbox zu laufen.
 RUN chmod 0755 /opt/brave.com/brave/chrome-sandbox \
- && chmod 0755 /usr/bin/wrapped-brave /custom-cont-init.d/10-firewall \
- && chmod 0644 /usr/share/selkies/www/icon.png \
+ && chmod 0755 /usr/bin/wrapped-brave /custom-cont-init.d/10-firewall /usr/local/bin/glasbox-fenster \
+ && chmod 0644 /usr/share/selkies/www/icon.png /defaults/labwc.xml \
  && chmod -R a+rX,go-w /opt/sb-crx /etc/brave

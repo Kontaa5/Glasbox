@@ -123,8 +123,8 @@ final class StartController: NSWindowController {
 
 // MARK: - Stream-Fenster (abgeriegelter WKWebView)
 
-/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R, Ctrl+Cmd+F)
-/// gehen deshalb zuerst ans Menü der App, damit Beenden, Schließen usw. immer funktionieren.
+/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R, Ctrl+Cmd+F,
+/// Cmd+Plus/Minus/0 für die Größe) gehen deshalb zuerst an die App, damit sie immer funktionieren.
 final class StreamWebView: WKWebView {
     private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r"]
 
@@ -134,6 +134,14 @@ final class StreamWebView: WKWebView {
         let istAppKuerzel = (mods == .command && Self.appKuerzel.contains(taste))
             || (mods == [.command, .control] && taste == "f")
         if istAppKuerzel, let menue = NSApp.mainMenu, menue.performKeyEquivalent(with: event) { return true }
+        if mods.subtracting(.shift) == .command, let stream = window?.windowController as? StreamController {
+            switch taste {
+            case "+", "=": stream.groesser(nil); return true
+            case "-": stream.kleiner(nil); return true
+            case "0": stream.originalgroesse(nil); return true
+            default: break
+            }
+        }
         return super.performKeyEquivalent(with: event)
     }
 
@@ -184,6 +192,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         c.allowsAirPlayForMediaPlayback = false
         c.preferences.isElementFullscreenEnabled = false  // Vollbild nur über das Fenster (Ctrl+Cmd+F)
         if let regeln { c.userContentController.add(regeln) }
+        c.userContentController.addUserScript(WKUserScript(source: Self.fluessigScrollen,
+                                                           injectionTime: .atDocumentStart, forMainFrameOnly: true))
         webView = StreamWebView(frame: .zero, configuration: c)
         webView.navigationDelegate = self
         webView.uiDelegate = self
@@ -192,6 +202,61 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         if !w.setFrameUsingName("GlasboxStream") { w.center() }
         webView.load(URLRequest(url: adresse))
     }
+
+    // Trackpad-Scrollen kommt in WebKit mit Kommazahlen an – der Stream hält das für Mausrad-Rasten
+    // und scrollt ruckelig in Sprüngen. Ganzzahlig weitergereicht (Rest wird mitgezählt) scrollt
+    // Brave pixelgenau. Reines Seitenskript ohne Verbindung zur App; Pinch-Zoom (Ctrl) bleibt unverändert.
+    static let fluessigScrollen = """
+    (() => {
+      let restX = 0, restY = 0;
+      window.addEventListener('wheel', (e) => {
+        if (!e.isTrusted || e.deltaMode !== 0 || e.ctrlKey) return;
+        if (Number.isInteger(e.deltaX) && Number.isInteger(e.deltaY)) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        restX += e.deltaX; restY += e.deltaY;
+        const dx = Math.trunc(restX), dy = Math.trunc(restY);
+        restX -= dx; restY -= dy;
+        if (!dx && !dy) return;
+        e.target.dispatchEvent(new WheelEvent('wheel', {
+          deltaX: dx, deltaY: dy, deltaMode: 0, clientX: e.clientX, clientY: e.clientY,
+          screenX: e.screenX, screenY: e.screenY, shiftKey: e.shiftKey, altKey: e.altKey,
+          metaKey: e.metaKey, bubbles: true, cancelable: true, composed: true }));
+      }, { capture: true, passive: false });
+    })();
+    """
+
+    // MARK: Größe (ganze Oberfläche im Container: Tab-Leiste, Adresszeile und Seite)
+
+    /// Skalierung, die der Stream kennt (96 = 1×, 192 = 2×); Schritte zu 24.
+    private static let stufenDpi = [96, 120, 144, 168, 192, 216, 240, 264, 288]
+
+    /// Zusätzliche Stufen gegenüber „passend zum Bildschirm“ (Retina 2×, sonst 1×), dauerhaft gespeichert.
+    private var zoomStufe: Int {
+        get { max(-4, min(4, UserDefaults.standard.integer(forKey: "zoomStufe"))) }
+        set { UserDefaults.standard.set(max(-4, min(4, newValue)), forKey: "zoomStufe") }
+    }
+
+    /// Gewünschte Skalierung an den Stream geben. Nur eine Zahl aus der festen Liste – keine fremden Daten.
+    private func wendeGroesseAn() {
+        let basis = (window?.backingScaleFactor ?? 2) >= 1.5 ? 4 : 0          // Index von 192 bzw. 96
+        let dpi = Self.stufenDpi[max(0, min(Self.stufenDpi.count - 1, basis + zoomStufe))]
+        webView.evaluateJavaScript(
+            "window.postMessage({type:'settings',settings:{scaling_dpi:\(dpi)}},location.origin)")
+    }
+
+    @objc func groesser(_ sender: Any?) { zoomStufe += 1; wendeGroesseAn() }
+    @objc func kleiner(_ sender: Any?) { zoomStufe -= 1; wendeGroesseAn() }
+    @objc func originalgroesse(_ sender: Any?) { zoomStufe = 0; wendeGroesseAn() }
+
+    // Nach dem Laden (Stream braucht kurz bis zur Verbindung) und beim Wechsel Retina <-> normaler Monitor.
+    func webView(_ v: WKWebView, didFinish n: WKNavigation!) {
+        for verzoegerung in [1.0, 4.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + verzoegerung) { [weak self] in self?.wendeGroesseAn() }
+        }
+    }
+
+    func windowDidChangeBackingProperties(_ n: Notification) { wendeGroesseAn() }
 
     // Nur die Glasbox-Oberfläche darf geladen werden.
     func webView(_ v: WKWebView, decidePolicyFor a: WKNavigationAction,
@@ -390,6 +455,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ansichtItem = NSMenuItem(); haupt.addItem(ansichtItem)
         let ansicht = NSMenu(title: "Darstellung")
         ansicht.addItem(withTitle: "Neu verbinden", action: #selector(StreamController.neuLaden(_:)), keyEquivalent: "r")
+        ansicht.addItem(.separator())
+        ansicht.addItem(withTitle: "Größer", action: #selector(StreamController.groesser(_:)), keyEquivalent: "+")
+        ansicht.addItem(withTitle: "Kleiner", action: #selector(StreamController.kleiner(_:)), keyEquivalent: "-")
+        ansicht.addItem(withTitle: "Originalgröße", action: #selector(StreamController.originalgroesse(_:)), keyEquivalent: "0")
+        ansicht.addItem(.separator())
         let voll = ansicht.addItem(withTitle: "Vollbild", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         voll.keyEquivalentModifierMask = [.command, .control]
         ansicht.addItem(.separator())

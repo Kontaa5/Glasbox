@@ -28,7 +28,11 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
 - **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
   oder dauerhaft im App-Menü unter Darstellung → Dashboard-Design.
-- **Scharfes Bild**: Stream in Retina-Auflösung, Brave im Container mit 2-facher Skalierung.
+- **Scharfes Bild**: Skalierung folgt dem Bildschirm (Retina 2×, normaler Monitor 1×), auch beim Wechsel.
+- **Größe der ganzen Oberfläche** (Tab-Leiste, Adresszeile und Seite zusammen): **Cmd+Plus / Cmd+Minus / Cmd+0**
+  oder Darstellung → Größer/Kleiner/Originalgröße – wird gespeichert.
+- **Fenster im Container bleibt fest** maximiert – Ziehen oder Doppelklick auf die Tab-Leiste verschiebt nichts.
+- **Flüssiges Trackpad-Scrollen** (pixelgenau statt in Sprüngen).
 - **Mauszeiger blendet aus** nach 10 s ohne Bewegung (kommt bei Bewegung sofort zurück).
 - **VPN-Check beim Start**.
 - **Labor-Modus** zum Herunterladen und Prüfen verdächtiger Dateien – ohne dass sie den Container verlassen.

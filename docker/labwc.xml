@@ -1,0 +1,41 @@
+<labwc_config>
+  <!-- Fenstermanager im Container (ersetzt /defaults/labwc.xml von linuxserver).
+       Brave bleibt immer maximiert und fest: Ziehen an der Tab-Leiste, Alt+Ziehen und
+       Fenster-Tastenkürzel (Cmd+Pfeil kommt hier als Super+Pfeil an) verschieben nichts mehr. -->
+
+  <core>
+    <decoration>server</decoration>
+    <gap>0</gap>
+  </core>
+
+  <theme>
+    <name>Clearlooks</name>
+    <titlebar>
+      <layout>icon:iconify,max,close</layout>
+      <showTitle>yes</showTitle>
+    </titlebar>
+    <cornerRadius>0</cornerRadius>
+  </theme>
+
+  <!-- Ein maximiertes Fenster löst sich erst nach 100000 px Ziehen – also nie. -->
+  <resistance>
+    <unMaximizeThreshold>100000</unMaximizeThreshold>
+  </resistance>
+
+  <keyboard>
+    <!-- Keine Fenster-Kürzel (sonst lädt labwc seine Standardkürzel) – nur dieses eine:
+         Super+F23 maximiert wieder, ausgelöst vom Fenster-Wächter (docker/fenster-waechter.py). -->
+    <keybind key="W-F23"><action name="Maximize" /></keybind>
+  </keyboard>
+
+  <mouse>
+    <default />
+  </mouse>
+
+  <windowRules>
+    <windowRule identifier="*" serverDecoration="yes" />
+    <windowRule identifier="*"><action name="Maximize" /></windowRule>
+    <windowRule identifier="brave*" serverDecoration="no" />
+  </windowRules>
+
+</labwc_config>

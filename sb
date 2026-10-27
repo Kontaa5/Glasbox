@@ -242,7 +242,7 @@ start() {
     -e PUID=1000 -e PGID=1000 -e TZ="$tz" -e DISABLE_IPV6=true \
     -e HARDEN_DESKTOP=true \
     -e DISABLE_CLOSE_BUTTON=true -e DISABLE_MOUSE_BUTTONS=true -e RESTART_APP=true \
-    -e SELKIES_USE_CSS_SCALING="false|locked" -e SELKIES_SCALING_DPI=192 \
+    -e SELKIES_USE_CSS_SCALING="false|locked" \
     -e SELKIES_ENABLE_CLIPBOARD="in" \
     -e SELKIES_CLIPBOARD_SEAMLESS="false|locked" \
     -e SELKIES_ENABLE_BINARY_CLIPBOARD="false|locked" \
