@@ -254,10 +254,8 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     /// Wählbare Größen in Prozent von „passend zum Bildschirm“ (Retina 2×, sonst 1×).
     static let groessen = [75, 88, 100, 112, 125, 150]
 
-    private var braveGroesse: Int {
-        get { let g = UserDefaults.standard.integer(forKey: "braveGroesse"); return Self.groessen.contains(g) ? g : 100 }
-        set { UserDefaults.standard.set(newValue, forKey: "braveGroesse") }
-    }
+    /// Nur für diese Sitzung – beim nächsten Start wieder 100 % (nichts wird gespeichert).
+    private var braveGroesse = 100
     private var basisDpi: Int { (window?.backingScaleFactor ?? 2) >= 1.5 ? 192 : 96 }
 
     /// DPI für eine Größe – nächster Wert aus der Liste (unter 1× gibt es nicht).
@@ -400,12 +398,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Dashboard-Design (dauerhaft, am Mac gespeichert): auto = wie der Mac, sonst hell/dunkel.
-    private var design: String {
-        get { ["auto", "hell", "dunkel"].contains(UserDefaults.standard.string(forKey: "dashboardDesign") ?? "")
-                ? UserDefaults.standard.string(forKey: "dashboardDesign")! : "auto" }
-        set { UserDefaults.standard.set(newValue, forKey: "dashboardDesign") }
-    }
+    /// Dashboard-Design nur für diese Sitzung: auto = wie der Mac, sonst hell/dunkel (nichts wird gespeichert).
+    private var design = "auto"
 
     /// Gewähltes Design (bzw. bei „auto“ das Aussehen des Macs) ans Dashboard im Container geben.
     private func gibThemaWeiter() {

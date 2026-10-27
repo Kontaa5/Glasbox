@@ -27,9 +27,9 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Dashboard im neuen Tab**: deine aktuelle IP mit Anbieter und Ort (Warnung, wenn das VPN aus ist),
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
 - **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
-  oder dauerhaft im App-Menü unter Darstellung → Dashboard-Design.
+  oder im App-Menü unter Darstellung → Dashboard-Design (gilt bis zum Beenden).
 - **Scharfes Bild**: Skalierung folgt dem Bildschirm (Retina 2×, normaler Monitor 1×), auch beim Wechsel.
-- **Brave-Größe** (Tabs, Adresszeile und Seite zusammen): Darstellung → Brave-Größe, wird gespeichert.
+- **Brave-Größe** (Tabs, Adresszeile und Seite zusammen): Darstellung → Brave-Größe, gilt bis zum Beenden.
   **Cmd+Plus / Cmd+Minus / Cmd+0** zoomt wie gewohnt nur die Seite.
 - **Fenster im Container bleibt fest** maximiert – Ziehen und Doppelklick auf die Tab-Leiste sind im Container gesperrt.
   Immer nur ein Brave-Fenster: herausgezogene Tabs und Strg+N landen als Tab im Hauptfenster, Inkognito ist aus.
