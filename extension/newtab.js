@@ -191,13 +191,6 @@ async function setzeAussehen(aenderung) {
   await chrome.storage.local.set({ aussehen: { ...aussehen, ...aenderung } });
 }
 
-$('einst').addEventListener('click', () => {
-  const karte = $('aussehen-karte');
-  karte.hidden = !karte.hidden;
-  $('einst').setAttribute('aria-expanded', String(!karte.hidden));
-  if (!karte.hidden) zeigeAussehen();
-});
-$('aussehen-zu').addEventListener('click', () => { $('aussehen-karte').hidden = true; $('einst').setAttribute('aria-expanded', 'false'); });
 $('schrift').addEventListener('change', (e) => {
   if (SCHRIFT_NAMEN.includes(e.target.value)) setzeAussehen({ schrift: e.target.value });
 });
@@ -219,6 +212,7 @@ function zeigeModus(config) {
 
 let config = await ladeConfig();
 zeigeModus(config);
+zeigeAussehen();
 ladeIp(config);
 chrome.downloads.onChanged.addListener(() => { if (config.labor) zeigeLaborDownloads(); });
 zeigeLesezeichen(config);
@@ -232,6 +226,6 @@ chrome.storage.onChanged.addListener(async (_, bereich) => {
     ladeIp(config);
     zeigeLesezeichen(config);
   }
-  if (bereich === 'local' || bereich === 'managed') { zeigeDesign(); if (!$('aussehen-karte').hidden) zeigeAussehen(); }
+  if (bereich === 'local' || bereich === 'managed') { zeigeDesign(); zeigeAussehen(); }
   if (bereich === 'local' || bereich === 'managed') zeigeAlles(config);
 });

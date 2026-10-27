@@ -12,44 +12,9 @@
     <form id="suche" autocomplete="off">
       <input id="q" type="search" placeholder="Suchen mit Brave Search oder Adresse eingeben" autofocus>
     </form>
-    <button type="button" id="einst" class="zahnrad" title="Aussehen" aria-expanded="false">⚙︎</button>
   </header>
 
   <main>
-    <section class="karte breit" id="aussehen-karte" hidden>
-      <div class="kopf"><h2>Aussehen</h2><button id="aussehen-zu" class="klein">Fertig</button></div>
-      <div class="einst-zeilen">
-        <label>Design
-          <span class="design" role="group" aria-label="Design">
-            <button type="button" data-design="auto" title="Wie der Mac">Auto</button>
-            <button type="button" data-design="hell" title="Hell">☀︎ Hell</button>
-            <button type="button" data-design="dunkel" title="Dunkel">☾ Dunkel</button>
-          </span>
-        </label>
-        <label>Schrift
-          <select id="schrift">
-            <option value="system">System</option>
-            <option value="serif">Serif</option>
-            <option value="mono">Monospace</option>
-            <option value="schmal">Schmal</option>
-          </select>
-        </label>
-        <label>Schriftgröße
-          <input id="groesse" type="range" min="12" max="20" step="1">
-          <span id="groesse-wert"></span>
-        </label>
-        <button id="aussehen-reset" class="klein">Zurücksetzen</button>
-      </div>
-      <div class="einst-zeilen">
-        <label>Brave-Größe (Tabs, Adresszeile) <span class="leise-inline">in der Glasbox-App: <code>⌘,</code></span></label>
-      </div>
-      <p class="leise">Gilt bis zum Beenden.</p>
-      <p class="leise"><b>Für immer speichern</b> oder <b>Tabs/Brave größer machen</b> geht nur in der Glasbox-App:
-        <code>⌘,</code> drücken (oder ⚙︎ im Startfenster) → einstellen → „Für einstellungen.json kopieren“ →
-        in die Datei einfügen. Hier im Browser geht das absichtlich nicht – Webseiten sollen nichts auf deinen Mac bringen
-        und nichts an Glasbox verstellen können.</p>
-    </section>
-
     <section class="karte breit labor" id="labor" hidden>
       <h2>🧪 Labor-Modus</h2>
       <p>Downloads und Dateiauswahl sind erlaubt – aber nur hier im Container. Nichts davon kommt auf deinen Mac,
@@ -85,16 +50,35 @@
     <section class="karte breit">
       <div class="kopf"><h2>Leistung pro Seite</h2><button id="perf-ok" class="klein">Warnung quittieren</button></div>
       <p class="leise">CPU des Browsers, während die Seite sichtbar war. Viele Worker + WebAssembly + hohe CPU = Verdacht auf Mining.</p>
-      <table>
-        <thead><tr><th>Seite</th><th>Ø CPU</th><th>Max</th><th>Worker</th><th>WASM</th><th>Status</th></tr></thead>
-        <tbody id="perf-liste"></tbody>
-      </table>
+      <div class="tabelle">
+        <table>
+          <thead><tr><th>Seite</th><th>Ø CPU</th><th>Max</th><th>Worker</th><th>WASM</th><th>Status</th></tr></thead>
+          <tbody id="perf-liste"></tbody>
+        </table>
+      </div>
     </section>
 
     <section class="karte breit">
       <div class="kopf"><h2>Lesezeichen</h2></div>
       <div id="lz-liste" class="kacheln"></div>
-      <p class="leise">Feste Lesezeichen kommen aus <code>einstellungen.json</code> am Mac. Lesezeichen aus dieser Sitzung verschwinden beim Beenden.</p>
+      <p class="leise">Feste Lesezeichen: <code>einstellungen.json</code> am Mac · neue verschwinden beim Beenden.</p>
+    </section>
+    <section class="karte breit einst" id="aussehen-karte">
+      <h2>Aussehen</h2>
+      <span class="design" role="group" aria-label="Design">
+        <button type="button" data-design="auto" title="Wie der Mac">Auto</button>
+        <button type="button" data-design="hell" title="Hell">☀︎</button>
+        <button type="button" data-design="dunkel" title="Dunkel">☾</button>
+      </span>
+      <select id="schrift" aria-label="Schrift">
+        <option value="system">System</option>
+        <option value="serif">Serif</option>
+        <option value="mono">Monospace</option>
+        <option value="schmal">Schmal</option>
+      </select>
+      <label class="groesse">Aa <input id="groesse" type="range" min="12" max="20" step="1" aria-label="Schriftgröße"> <span id="groesse-wert"></span></label>
+      <button id="aussehen-reset" class="klein">Zurücksetzen</button>
+      <span class="leise-inline">Alles dauerhaft (auch Brave-Größe): <code>⌘,</code> in der Glasbox-App</span>
     </section>
   </main>
 </body>
