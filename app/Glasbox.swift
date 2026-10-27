@@ -61,6 +61,7 @@ enum Sb {
 
 final class StartController: NSWindowController {
     var gewaehlt: ((String) -> Void)?
+    var einstellungen: (() -> Void)?
     private let status = NSTextField(labelWithString: "")
     private let rad = NSProgressIndicator()
     private var knoepfe: [NSButton] = []
@@ -98,7 +99,21 @@ final class StartController: NSWindowController {
         icon.heightAnchor.constraint(equalToConstant: 72).isActive = true
         info.preferredMaxLayoutWidth = 380
         window?.contentView = stapel
+
+        // Zahnrad oben rechts: Aussehen schon vor dem Start einstellen
+        let zahnrad = NSButton(image: NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Aussehen")!,
+                               target: self, action: #selector(zeigeEinstellungen))
+        zahnrad.isBordered = false
+        zahnrad.toolTip = "Aussehen (⌘,)"
+        zahnrad.translatesAutoresizingMaskIntoConstraints = false
+        stapel.addSubview(zahnrad)
+        NSLayoutConstraint.activate([
+            zahnrad.topAnchor.constraint(equalTo: stapel.topAnchor, constant: 12),
+            zahnrad.trailingAnchor.constraint(equalTo: stapel.trailingAnchor, constant: -12),
+        ])
     }
+
+    @objc private func zeigeEinstellungen() { einstellungen?() }
 
     @objc private func normalGewaehlt() { waehle("normal") }
     @objc private func laborGewaehlt() { waehle("labor") }
@@ -502,6 +517,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func zeigeStart() {
         let s = StartController()
+        s.einstellungen = { [weak self] in self?.zeigeAussehen(nil) }
         s.gewaehlt = { [weak self, weak s] modus in
             DispatchQueue.global().async {
                 let (code, aus) = Sb.ausfuehren(["hochfahren", modus])
@@ -533,7 +549,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func zeigeAussehen(_ sender: Any?) {
         let f = aussehenFenster ?? AussehenController()
-        f.retina = { [weak self] in self?.stream?.istRetina ?? true }
+        f.retina = { [weak self] in self?.stream?.istRetina ?? ((NSScreen.main?.backingScaleFactor ?? 2) >= 1.5) }
         aussehenFenster = f
         f.aktualisiere()
         f.showWindow(nil)

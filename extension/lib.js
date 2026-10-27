@@ -78,13 +78,25 @@ const SCHRIFTEN = {
   schmal: '"Nimbus Sans Narrow", "Liberation Sans Narrow", sans-serif-condensed, sans-serif',
 };
 
+export const SCHRIFT_NAMEN = Object.keys(SCHRIFTEN);
+
+/// Aussehen der Sitzung: im Dashboard (⚙︎) gewählt, überschreibt die Werte aus der App/einstellungen.json.
+export async function sitzungsAussehen(config) {
+  const { aussehen = {} } = await chrome.storage.local.get('aussehen');
+  const schrift = SCHRIFT_NAMEN.includes(aussehen.schrift) ? aussehen.schrift : config.schrift;
+  const g = aussehen.schriftgroesse;
+  const schriftgroesse = Number.isInteger(g) && g >= 12 && g <= 20 ? g : config.schriftgroesse;
+  return { schrift, schriftgroesse };
+}
+
 export async function wendeDesignAn(config) {
   const { design } = await chrome.storage.local.get('design');
   const wahl = DESIGNS.includes(design) ? design : 'auto';
+  const { schrift, schriftgroesse } = await sitzungsAussehen(config);
   const wurzel = document.documentElement;
   wurzel.dataset.thema = wahl === 'auto' ? config.thema : wahl;
-  wurzel.style.setProperty('--schrift', SCHRIFTEN[config.schrift] || SCHRIFTEN.system);
-  wurzel.style.setProperty('--schriftgroesse', config.schriftgroesse + 'px');
+  wurzel.style.setProperty('--schrift', SCHRIFTEN[schrift] || SCHRIFTEN.system);
+  wurzel.style.setProperty('--schriftgroesse', schriftgroesse + 'px');
   return wahl;
 }
 

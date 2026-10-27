@@ -1,4 +1,4 @@
-import { ladeConfig, istWebUrl, kuerzen, wendeDesignAn, DESIGNS } from './lib.js';
+import { ladeConfig, istWebUrl, kuerzen, wendeDesignAn, DESIGNS, SCHRIFT_NAMEN, sitzungsAussehen } from './lib.js';
 
 // Alles wird mit textContent / createElement gebaut – nie innerHTML mit fremden Daten.
 const $ = (id) => document.getElementById(id);
@@ -178,6 +178,37 @@ for (const b of document.querySelectorAll('.design button')) {
   });
 }
 
+// ---------- Aussehen (⚙︎): Schrift und Größe nur für diese Sitzung ----------
+async function zeigeAussehen() {
+  const { schrift, schriftgroesse } = await sitzungsAussehen(config);
+  $('schrift').value = schrift;
+  $('groesse').value = String(schriftgroesse);
+  $('groesse-wert').textContent = schriftgroesse + ' px';
+}
+
+async function setzeAussehen(aenderung) {
+  const { aussehen = {} } = await chrome.storage.local.get('aussehen');
+  await chrome.storage.local.set({ aussehen: { ...aussehen, ...aenderung } });
+}
+
+$('einst').addEventListener('click', () => {
+  const karte = $('aussehen-karte');
+  karte.hidden = !karte.hidden;
+  $('einst').setAttribute('aria-expanded', String(!karte.hidden));
+  if (!karte.hidden) zeigeAussehen();
+});
+$('aussehen-zu').addEventListener('click', () => { $('aussehen-karte').hidden = true; $('einst').setAttribute('aria-expanded', 'false'); });
+$('schrift').addEventListener('change', (e) => {
+  if (SCHRIFT_NAMEN.includes(e.target.value)) setzeAussehen({ schrift: e.target.value });
+});
+$('groesse').addEventListener('input', (e) => {
+  const g = parseInt(e.target.value, 10);
+  if (Number.isInteger(g) && g >= 12 && g <= 20) setzeAussehen({ schriftgroesse: g });
+});
+$('aussehen-reset').addEventListener('click', async () => {
+  await chrome.storage.local.remove(['aussehen', 'design']);
+});
+
 function zeigeModus(config) {
   zeigeDesign();
   $('labor').hidden = !config.labor;
@@ -201,6 +232,6 @@ chrome.storage.onChanged.addListener(async (_, bereich) => {
     ladeIp(config);
     zeigeLesezeichen(config);
   }
-  if (bereich === 'local') zeigeDesign();
+  if (bereich === 'local' || bereich === 'managed') { zeigeDesign(); if (!$('aussehen-karte').hidden) zeigeAussehen(); }
   if (bereich === 'local' || bereich === 'managed') zeigeAlles(config);
 });

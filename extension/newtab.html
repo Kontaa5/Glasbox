@@ -17,9 +17,32 @@
       <button type="button" data-design="hell" title="Hell">☀︎</button>
       <button type="button" data-design="dunkel" title="Dunkel">☾</button>
     </div>
+    <button type="button" id="einst" class="zahnrad" title="Aussehen" aria-expanded="false">⚙︎</button>
   </header>
 
   <main>
+    <section class="karte breit" id="aussehen-karte" hidden>
+      <div class="kopf"><h2>Aussehen</h2><button id="aussehen-zu" class="klein">Fertig</button></div>
+      <div class="einst-zeilen">
+        <label>Schrift
+          <select id="schrift">
+            <option value="system">System</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Monospace</option>
+            <option value="schmal">Schmal</option>
+          </select>
+        </label>
+        <label>Schriftgröße
+          <input id="groesse" type="range" min="12" max="20" step="1">
+          <span id="groesse-wert"></span>
+        </label>
+        <button id="aussehen-reset" class="klein">Zurücksetzen</button>
+      </div>
+      <p class="leise">Gilt für diese Sitzung. Dauerhaft (und für die Größe von Brave selbst): in der Glasbox-App
+        <code>⌘,</code> bzw. ⚙︎ im Startfenster → „Für einstellungen.json kopieren“.
+        Aus diesem Browser kommt absichtlich nichts auf deinen Mac – auch nicht über Kopieren.</p>
+    </section>
+
     <section class="karte breit labor" id="labor" hidden>
       <h2>🧪 Labor-Modus</h2>
       <p>Downloads und Dateiauswahl sind erlaubt – aber nur hier im Container. Nichts davon kommt auf deinen Mac,
