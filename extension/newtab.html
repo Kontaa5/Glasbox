@@ -21,13 +21,19 @@
         beim Beenden (<code>./sb stop</code>) wird alles gelöscht.</p>
     </section>
 
-    <section class="karte breit" id="ip-karte">
-      <div class="kopf"><h2>Deine IP</h2><button id="ip-neu" class="klein">Neu prüfen</button></div>
-      <div class="ip-zeile">
-        <div id="ip" class="gross">…</div>
-        <div id="ip-status" class="status">prüfe…</div>
+    <section class="karte breit ip-karte" id="ip-karte">
+      <div class="ip-haupt">
+        <h2>Deine IP</h2>
+        <div class="ip-zeile">
+          <div id="ip" class="gross">…</div>
+          <div id="ip-status" class="status">prüfe…</div>
+        </div>
       </div>
-      <div id="ip-details" class="leise"></div>
+      <div class="ip-info">
+        <div id="ip-ort" class="ip-ort"></div>
+        <div id="ip-org" class="leise"></div>
+      </div>
+      <button id="ip-neu" class="rund" title="Neu prüfen" aria-label="IP neu prüfen">↻</button>
     </section>
 
     <section class="karte">

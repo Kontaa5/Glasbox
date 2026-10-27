@@ -27,9 +27,14 @@ $('suche').addEventListener('submit', (e) => {
 });
 
 // ---------- IP ----------
+// Länderkürzel (nur zwei Großbuchstaben, oben geprüft) -> Flaggen-Emoji
+function flagge(land) {
+  return land ? String.fromCodePoint(...[...land].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '';
+}
 async function ladeIp(config) {
   $('ip').textContent = '…';
-  $('ip-details').textContent = '';
+  $('ip-ort').textContent = '';
+  $('ip-org').textContent = '';
   const status = $('ip-status');
   status.className = 'status';
   status.textContent = 'prüfe…';
@@ -44,9 +49,11 @@ async function ladeIp(config) {
     }
     const ip = typeof daten.ip === 'string' ? daten.ip : '?';
     const org = typeof daten.org === 'string' ? daten.org : '';
-    const ort = [daten.city, daten.region, daten.country].filter((x) => typeof x === 'string' && x).join(', ');
+    const land = typeof daten.country === 'string' && /^[A-Z]{2}$/.test(daten.country) ? daten.country : '';
+    const ort = [daten.city, daten.region].filter((x) => typeof x === 'string' && x).join(', ');
     $('ip').textContent = kuerzen(ip, 60);
-    $('ip-details').textContent = [ort, org].filter(Boolean).map((x) => kuerzen(x, 120)).join(' · ');
+    $('ip-ort').textContent = [flagge(land), kuerzen(ort, 80), land].filter(Boolean).join(' ');
+    $('ip-org').textContent = kuerzen(org.replace(/^AS\d+\s+/, ''), 80);
 
     const heim = config.heim_provider.find((p) => org.toLowerCase().includes(p.toLowerCase()));
     if (heim) {
@@ -122,7 +129,17 @@ function zeigePerf(perf, config) {
 function kachel(name, url) {
   const a = el('a');
   a.href = url; // nur geprüfte http(s)-URLs
-  a.append(document.createTextNode(kuerzen(name || url, 60)), el('small', '', kuerzen(url, 80)));
+  let host = url;
+  try { host = new URL(url).hostname.replace(/^www\./, ''); } catch { /* bleibt url */ }
+  const titel = kuerzen(name || host, 60);
+  // Buchstabe statt Favicon: lädt nichts von der Seite. Farbe nur aus einer Zahl berechnet.
+  let h = 0;
+  for (const c of host) h = (h * 31 + c.charCodeAt(0)) % 360;
+  const zeichen = el('span', 'zeichen', (titel.trim()[0] || '?').toUpperCase());
+  zeichen.style.setProperty('--farbe', String(h));
+  const text = el('span', 'text');
+  text.append(el('span', 'name', titel), el('small', '', kuerzen(host, 60)));
+  a.append(zeichen, text);
   return a;
 }
 

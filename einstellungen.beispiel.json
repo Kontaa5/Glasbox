@@ -1,8 +1,13 @@
 {
   "lesezeichen": [
-    { "name": "Brave Search", "url": "https://search.brave.com" },
-    { "name": "VirusTotal", "url": "https://www.virustotal.com" },
-    { "name": "urlscan.io", "url": "https://urlscan.io" }
+    {
+      "name": "VirusTotal",
+      "url": "https://www.virustotal.com"
+    },
+    {
+      "name": "urlscan.io",
+      "url": "https://urlscan.io"
+    }
   ],
   "heim_provider": [],
   "erlaubte_weiterleitungen": [],

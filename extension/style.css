@@ -59,6 +59,14 @@ main {
 h2 { font-size: 0.929rem; text-transform: uppercase; letter-spacing: .06em; color: var(--leise); margin: 0; font-weight: 600; }
 .leise { color: var(--leise); font-size: 0.893rem; margin: 4px 0 6px; }
 .gross { font-size: 1.786rem; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.ip-karte { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.ip-haupt { flex: 1 1 auto; }
+.ip-info { text-align: right; }
+.ip-ort { font-weight: 600; }
+.ip-info .leise { margin: 2px 0 0; }
+button.rund { flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rand);
+  background: transparent; color: var(--leise); font-size: 1.143rem; cursor: pointer; }
+button.rund:hover { color: var(--text); border-color: var(--akzent); }
 .ip-zeile { display: flex; align-items: center; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
 .status { padding: 4px 10px; border-radius: 999px; font-size: 0.893rem; font-weight: 600; background: var(--rand); }
 .status.ok { background: rgba(52,199,123,.15); color: var(--gruen); }
@@ -77,14 +85,21 @@ td:first-child { overflow-wrap: anywhere; }
 .badge.ok { color: var(--gruen); background: rgba(52,199,123,.12); }
 .badge.mittel { color: var(--gelb); background: rgba(245,185,66,.12); }
 .badge.hoch { color: var(--rot); background: rgba(255,92,92,.14); }
-.kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin-top: 8px; }
+.kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
 .tabelle { max-height: min(18vh, 200px); overflow-y: auto; }
 .kacheln a {
-  display: block; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--rand);
-  color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px;
+  border: 1px solid var(--rand); color: var(--text); text-decoration: none; min-width: 0;
+  transition: border-color .15s, background .15s;
 }
-.kacheln a:hover { border-color: var(--akzent); }
-.kacheln a small { display: block; color: var(--leise); font-size: 0.821rem; overflow: hidden; text-overflow: ellipsis; }
+.kacheln a:hover { border-color: var(--akzent); background: color-mix(in srgb, var(--akzent) 6%, transparent); }
+.kacheln .zeichen {
+  flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+  font-weight: 650; color: #fff; background: hsl(calc(var(--farbe) * 1deg) 55% 45%);
+}
+.kacheln .text { display: flex; flex-direction: column; min-width: 0; }
+.kacheln .name, .kacheln small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kacheln small { color: var(--leise); font-size: 0.821rem; }
 button.klein, button.gross-knopf {
   background: var(--rand); color: var(--text); border: 1px solid transparent; border-radius: 8px;
   padding: 5px 10px; font-size: 0.893rem; cursor: pointer;
