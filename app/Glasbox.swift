@@ -146,23 +146,6 @@ final class StreamWebView: WKWebView {
         return super.performKeyEquivalent(with: event)
     }
 
-    // Doppelklick auf die Tab-Leiste löst Brave im Container aus dem Vollbild (danach verschiebbar).
-    // Den zweiten Klick dort reicht die App gar nicht erst weiter. Höhe der Leiste in Punkten (je nach Zoom).
-    var tabLeisteHoehe: () -> CGFloat = { 32 }
-    private var schluckeLoslassen = false
-
-    override func mouseDown(with event: NSEvent) {
-        let p = convert(event.locationInWindow, from: nil)
-        let vonOben = isFlipped ? p.y : bounds.height - p.y
-        if event.clickCount >= 2 && vonOben < tabLeisteHoehe() { schluckeLoslassen = true; return }
-        super.mouseDown(with: event)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        if schluckeLoslassen { schluckeLoslassen = false; return }
-        super.mouseUp(with: event)
-    }
-
     // Mausrad (keine Trackpad-Feinwerte): WebKit liefert beschleunigte Kommazahlen, die der Stream
     // falsch einordnet. Die App gibt stattdessen echte Rasten (Zeilen-Ereignisse) an das Seitenskript;
     // Brave im Container scrollt jede Raste selbst weich (--enable-smooth-scrolling). Nur Zahlen.
@@ -225,12 +208,10 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         if let regeln { c.userContentController.add(regeln) }
         c.userContentController.addUserScript(WKUserScript(source: Self.fluessigScrollen,
                                                            injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        let wv = StreamWebView(frame: .zero, configuration: c)
-        webView = wv
+        webView = StreamWebView(frame: .zero, configuration: c)
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsMagnification = false
-        wv.tabLeisteHoehe = { [weak self] in self?.tabLeisteHoehe ?? 32 }
         w.contentView = webView
         if !w.setFrameUsingName("GlasboxStream") { w.center() }
         webView.load(URLRequest(url: adresse))
@@ -299,11 +280,6 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         let job = DispatchWorkItem { [weak self] in self?.wendeGroesseAn() }
         groesseSpaeter = job
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: job)
-    }
-
-    /// Höhe der Tab-Leiste im Fenster: 32 Punkte bei 1:1, wächst/schrumpft mit dem Zoom.
-    var tabLeisteHoehe: CGFloat {
-        32 * CGFloat(Self.stufenDpi[index]) / 96 / (window?.backingScaleFactor ?? 2)
     }
 
     /// Gewünschte Skalierung an den Stream geben. Nur eine Zahl aus der festen Liste – keine fremden Daten.

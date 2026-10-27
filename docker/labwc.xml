@@ -1,7 +1,8 @@
 <labwc_config>
   <!-- Fenstermanager im Container (ersetzt /defaults/labwc.xml von linuxserver).
        Brave bleibt immer maximiert und fest: Ziehen an der Tab-Leiste, Alt+Ziehen und
-       Fenster-Tastenkürzel (Cmd+Pfeil kommt hier als Super+Pfeil an) verschieben nichts mehr. -->
+       Fenster-Tastenkürzel (Cmd+Pfeil kommt hier als Super+Pfeil an) verschieben nichts mehr.
+       Doppelklick auf die Tab-Leiste: abgeschaltet über docker/glasbox.gschema.override. -->
 
   <core>
     <decoration>server</decoration>
@@ -24,10 +25,8 @@
 
   <keyboard>
     <!-- Keine Fenster-Kürzel (sonst lädt labwc seine Standardkürzel) – nur dieses eine:
-         Super+F23/F22 maximieren wieder, ausgelöst vom Fenster-Wächter (docker/fenster-waechter.py). -->
+         Super+F23 maximiert wieder, ausgelöst vom Fenster-Wächter (docker/fenster-waechter.py). -->
     <keybind key="W-F23"><action name="Maximize" /></keybind>
-    <!-- Super+F22: neu maximieren, falls Brave nach einem Größenwechsel in der alten Größe hängt -->
-    <keybind key="W-F22"><action name="UnMaximize" /><action name="Maximize" /></keybind>
   </keyboard>
 
   <mouse>
@@ -35,7 +34,9 @@
   </mouse>
 
   <windowRules>
-    <windowRule identifier="*" serverDecoration="yes" />
+    <!-- fixedPosition: Ziehen an der Tab-Leiste (Brave fragt dann selbst nach Verschieben) wird ignoriert;
+         Größenwechsel des Streams und Zoom passen das maximierte Fenster trotzdem an. -->
+    <windowRule identifier="*" serverDecoration="yes" fixedPosition="yes" />
     <windowRule identifier="*"><action name="Maximize" /></windowRule>
     <windowRule identifier="brave*" serverDecoration="no" />
   </windowRules>

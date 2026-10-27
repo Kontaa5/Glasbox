@@ -1,0 +1,6 @@
+# Brave liest diese GNOME-Einstellungen für seine eigene Titelleiste (Tab-Leiste):
+# Doppel-, Mittel- und Rechtsklick dort lösen das Fenster nicht mehr aus dem Vollbild.
+[org.gnome.desktop.wm.preferences]
+action-double-click-titlebar='none'
+action-middle-click-titlebar='none'
+action-right-click-titlebar='none'
