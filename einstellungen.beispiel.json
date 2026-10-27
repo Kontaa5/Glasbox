@@ -8,5 +8,11 @@
   "erlaubte_weiterleitungen": [],
   "cpu_warnung_prozent": 70,
   "cpu_kerne": 4,
-  "arbeitsspeicher_gb": 6
+  "arbeitsspeicher_gb": 6,
+  "aussehen": {
+    "design": "auto",
+    "schrift": "system",
+    "schriftgroesse": 14,
+    "brave_groesse": 100
+  }
 }

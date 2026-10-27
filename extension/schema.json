@@ -38,6 +38,12 @@
     },
     "thema": {
       "type": "string"
+    },
+    "schrift": {
+      "type": "string"
+    },
+    "schriftgroesse": {
+      "type": "integer"
     }
   }
 }

@@ -69,15 +69,23 @@ docker_bereit() {
 mac_thema() { [ "$(defaults read -g AppleInterfaceStyle 2>/dev/null)" = Dark ] && echo dunkel || echo hell; }
 
 # Thema im laufenden Betrieb ändern: Datei an Ort und Stelle überschreiben (gleiche Datei bleibt eingebunden).
+# Optional Schrift und Schriftgröße fürs Dashboard (nur feste Werte, siehe vorbereiten.py).
 thema_setzen() {
-  [[ "$1" =~ ^(hell|dunkel)$ ]] || fehler "Aufruf: ./sb thema hell|dunkel"
+  local aufruf="Aufruf: ./sb thema hell|dunkel [system|serif|mono|schmal 12-20]"
+  [[ "$1" =~ ^(hell|dunkel)$ ]] || fehler "$aufruf"
+  [ -z "${2:-}" ] || [[ "$2" =~ ^(system|serif|mono|schmal)$ ]] || fehler "$aufruf"
+  [ -z "${3:-}" ] || [[ "$3" =~ ^(1[2-9]|20)$ ]] || fehler "$aufruf"
   [ -f "$LAUFZEIT/erweiterung.json" ] || return 0
-  python3 -I - "$LAUFZEIT/erweiterung.json" "$1" <<'PY'
+  python3 -I - "$LAUFZEIT/erweiterung.json" "$1" "${2:-}" "${3:-}" <<'PY'
 import json, sys
-p, thema = sys.argv[1], sys.argv[2]
+p, thema, schrift, groesse = sys.argv[1:5]
 d = json.load(open(p))
 for e in d["3rdparty"]["extensions"].values():
     e["thema"] = thema
+    if schrift:
+        e["schrift"] = schrift
+    if groesse:
+        e["schriftgroesse"] = int(groesse)
 with open(p, "r+") as f:
     f.seek(0); f.write(json.dumps(d, ensure_ascii=False, indent=1)); f.truncate()
 PY
@@ -296,7 +304,7 @@ case "${1:-start}" in
   stop) stop;;
   update) update;;
   status) status;;
-  thema) thema_setzen "${2:-}";;
+  thema) thema_setzen "${2:-}" "${3:-}" "${4:-}";;
   modus) laeuft && docker inspect -f '{{index .Config.Labels "glasbox.modus"}}' "$NAME" || true;;
   log) docker logs --tail 80 "$NAME";;
   *) sed -n '2,8p' "$0"; exit 1;;

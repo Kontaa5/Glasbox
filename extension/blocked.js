@@ -1,6 +1,6 @@
 import { istWebUrl, ladeConfig, wendeDesignAn } from './lib.js';
 
-ladeConfig().then((c) => wendeDesignAn(c.thema));
+ladeConfig().then((c) => wendeDesignAn(c));
 
 let daten = {};
 try {

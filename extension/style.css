@@ -16,29 +16,32 @@
   :root:not([data-thema="dunkel"]) { --bg: #f5f6f8; --karte: #ffffff; --rand: #e2e5ea; --text: #1d2129; --leise: #667085; --gruen: #13894f; --rot: #d93025; --gelb: #a8680e; --akzent: #3b5bdb; color-scheme: light; }
 }
 * { box-sizing: border-box; }
+/* Schrift und Größe aus „Aussehen“ (lib.js wendeDesignAn); alle Größen in rem wachsen mit */
+html { font-size: var(--schriftgroesse, 14px); }
+button, input, select, textarea { font-family: inherit; }
 body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 1rem/1.45 var(--schrift, system-ui, -apple-system, "Segoe UI", sans-serif);
 }
 header {
   display: flex; align-items: center; gap: 24px;
   padding: 20px 32px; border-bottom: 1px solid var(--rand);
 }
-.marke { font-weight: 600; font-size: 16px; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.marke { font-weight: 600; font-size: 1.143rem; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .logo { width: 22px; height: 22px; }
 .labor { border-color: var(--gelb); background: rgba(245,185,66,.08); }
-.labor h2 { color: var(--gelb); font-size: 15px; }
+.labor h2 { color: var(--gelb); font-size: 1.071rem; }
 .labor p { margin: 6px 0 0; }
 [hidden] { display: none !important; }
 #suche { flex: 1; max-width: 640px; }
 .design { display: flex; gap: 2px; margin-left: auto; padding: 3px; border-radius: 10px; background: var(--rand); }
-.design button { border: 0; background: transparent; color: var(--leise); padding: 5px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+.design button { border: 0; background: transparent; color: var(--leise); padding: 5px 10px; border-radius: 7px; font-size: 0.929rem; cursor: pointer; }
 .design button[aria-pressed="true"] { background: var(--karte); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 #q {
   width: 100%; padding: 10px 14px; border-radius: 10px;
-  border: 1px solid var(--rand); background: var(--karte); color: var(--text); font-size: 15px;
+  border: 1px solid var(--rand); background: var(--karte); color: var(--text); font-size: 1.071rem;
 }
 #q:focus { outline: 2px solid var(--akzent); outline-offset: 0; }
 main {
@@ -48,24 +51,24 @@ main {
 .karte { background: var(--karte); border: 1px solid var(--rand); border-radius: 14px; padding: 16px 18px; min-width: 0; }
 .breit { grid-column: 1 / -1; }
 .kopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--leise); margin: 0; font-weight: 600; }
-.leise { color: var(--leise); font-size: 12.5px; margin: 6px 0 8px; }
-.gross { font-size: 30px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+h2 { font-size: 0.929rem; text-transform: uppercase; letter-spacing: .06em; color: var(--leise); margin: 0; font-weight: 600; }
+.leise { color: var(--leise); font-size: 0.893rem; margin: 6px 0 8px; }
+.gross { font-size: 2.143rem; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .ip-zeile { display: flex; align-items: center; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
-.status { padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--rand); }
+.status { padding: 4px 10px; border-radius: 999px; font-size: 0.893rem; font-weight: 600; background: var(--rand); }
 .status.ok { background: rgba(52,199,123,.15); color: var(--gruen); }
 .status.warn { background: rgba(255,92,92,.15); color: var(--rot); }
-.zahl { font-size: 22px; font-weight: 650; color: var(--gruen); }
+.zahl { font-size: 1.571rem; font-weight: 650; color: var(--gruen); }
 .zahl.warn { color: var(--rot); }
 .liste { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; }
-.liste li { padding: 6px 0; border-top: 1px solid var(--rand); font-size: 12.5px; overflow-wrap: anywhere; }
+.liste li { padding: 6px 0; border-top: 1px solid var(--rand); font-size: 0.893rem; overflow-wrap: anywhere; }
 .liste .zeit { color: var(--leise); margin-right: 6px; }
 .liste .leer { color: var(--gruen); border: 0; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; font-size: 0.929rem; font-variant-numeric: tabular-nums; }
 th { text-align: left; color: var(--leise); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--rand); }
 td { padding: 6px 8px; border-bottom: 1px solid var(--rand); }
 td:first-child { overflow-wrap: anywhere; }
-.badge { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.badge { padding: 2px 8px; border-radius: 999px; font-size: 0.857rem; font-weight: 600; }
 .badge.ok { color: var(--gruen); background: rgba(52,199,123,.12); }
 .badge.mittel { color: var(--gelb); background: rgba(245,185,66,.12); }
 .badge.hoch { color: var(--rot); background: rgba(255,92,92,.14); }
@@ -75,20 +78,20 @@ td:first-child { overflow-wrap: anywhere; }
   color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .kacheln a:hover { border-color: var(--akzent); }
-.kacheln a small { display: block; color: var(--leise); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; }
+.kacheln a small { display: block; color: var(--leise); font-size: 0.821rem; overflow: hidden; text-overflow: ellipsis; }
 button.klein, button.gross-knopf {
   background: var(--rand); color: var(--text); border: 1px solid transparent; border-radius: 8px;
-  padding: 5px 10px; font-size: 12.5px; cursor: pointer;
+  padding: 5px 10px; font-size: 0.893rem; cursor: pointer;
 }
 button.klein:hover, button.gross-knopf:hover { border-color: var(--akzent); }
-button.gross-knopf { padding: 10px 16px; font-size: 14px; }
+button.gross-knopf { padding: 10px 16px; font-size: 1rem; }
 button.gefahr { background: transparent; border-color: var(--rot); color: var(--rot); }
-code { background: var(--rand); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+code { background: var(--rand); padding: 1px 5px; border-radius: 4px; font-size: 0.857rem; }
 
 /* Sperrseite */
 .sperre { max-width: 640px; margin: 12vh auto; padding: 0 24px; }
-.sperre h1 { font-size: 24px; margin: 0 0 8px; }
-.sperre .url { background: var(--karte); border: 1px solid var(--rand); border-radius: 10px; padding: 10px 12px; margin: 6px 0 16px; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+.sperre h1 { font-size: 1.714rem; margin: 0 0 8px; }
+.sperre .url { background: var(--karte); border: 1px solid var(--rand); border-radius: 10px; padding: 10px 12px; margin: 6px 0 16px; overflow-wrap: anywhere; font-family: "DejaVu Sans Mono", ui-monospace, monospace; font-size: 0.929rem; }
 .sperre .knoepfe { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
 
 @media (max-width: 900px) {

@@ -61,6 +61,8 @@ export async function ladeConfig() {
     cpu_limit: zahl(roh.cpu_limit, 0, 256, STANDARD.cpu_limit),
     labor: roh.labor === true,
     thema: roh.thema === 'hell' || roh.thema === 'dunkel' ? roh.thema : '',
+    schrift: Object.hasOwn(SCHRIFTEN, roh.schrift) ? roh.schrift : 'system',
+    schriftgroesse: zahl(roh.schriftgroesse, 12, 20, 14),
   };
 }
 
@@ -68,10 +70,21 @@ export async function ladeConfig() {
 // bzw. der Einstellung in der Glasbox-App (kommt als config.thema).
 export const DESIGNS = ['auto', 'hell', 'dunkel'];
 
-export async function wendeDesignAn(macThema) {
+// Schriften: nur diese festen Werte (kommen aus der Glasbox-App bzw. einstellungen.json → aussehen).
+const SCHRIFTEN = {
+  system: 'system-ui, "Noto Sans", "DejaVu Sans", sans-serif',
+  serif: '"Noto Serif", "DejaVu Serif", "Liberation Serif", serif',
+  mono: '"DejaVu Sans Mono", "Liberation Mono", monospace',
+  schmal: '"Nimbus Sans Narrow", "Liberation Sans Narrow", sans-serif-condensed, sans-serif',
+};
+
+export async function wendeDesignAn(config) {
   const { design } = await chrome.storage.local.get('design');
   const wahl = DESIGNS.includes(design) ? design : 'auto';
-  document.documentElement.dataset.thema = wahl === 'auto' ? macThema : wahl;
+  const wurzel = document.documentElement;
+  wurzel.dataset.thema = wahl === 'auto' ? config.thema : wahl;
+  wurzel.style.setProperty('--schrift', SCHRIFTEN[config.schrift] || SCHRIFTEN.system);
+  wurzel.style.setProperty('--schriftgroesse', config.schriftgroesse + 'px');
   return wahl;
 }
 

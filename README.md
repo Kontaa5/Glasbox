@@ -26,11 +26,11 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   Dazu ist WebAssembly komplett aus (darüber laufen fast alle Browser-Miner).
 - **Dashboard im neuen Tab**: deine aktuelle IP mit Anbieter und Ort (Warnung, wenn das VPN aus ist),
   Download- und Upload-Versuche, blockierte Weiterleitungen, Verbrauch pro Seite, Lesezeichen.
-- **Hell/Dunkel**: Dashboard folgt live dem Mac. Umschalten im Dashboard (Auto/☀︎/☾, gilt für die Sitzung)
-  oder im App-Menü unter Darstellung → Dashboard-Design (gilt bis zum Beenden).
+- **Aussehen** (Darstellung → Aussehen …, Cmd+Komma): Dashboard-Design (Auto/Hell/Dunkel), Schrift und
+  Schriftgröße sowie die Brave-Größe (Tabs, Adresszeile und Seite zusammen). Gilt bis zum Beenden;
+  „Für einstellungen.json kopieren“ erzeugt den Text, mit dem es bei jedem Start gilt.
+  Hell/Dunkel lässt sich auch direkt im Dashboard umschalten (Auto/☀︎/☾). **Cmd+Plus/Minus/0** zoomt nur die Seite.
 - **Scharfes Bild**: Skalierung folgt dem Bildschirm (Retina 2×, normaler Monitor 1×), auch beim Wechsel.
-- **Brave-Größe** (Tabs, Adresszeile und Seite zusammen): Darstellung → Brave-Größe, gilt bis zum Beenden.
-  **Cmd+Plus / Cmd+Minus / Cmd+0** zoomt wie gewohnt nur die Seite.
 - **Fenster im Container bleibt fest** maximiert – Ziehen und Doppelklick auf die Tab-Leiste sind im Container gesperrt.
   Immer nur ein Brave-Fenster: herausgezogene Tabs und Strg+N landen als Tab im Hauptfenster, Inkognito ist aus.
 - **Flüssiges Scrollen** mit Trackpad (pixelgenau) und Maus (Brave scrollt jede Raste weich).
@@ -106,6 +106,7 @@ Beim ersten Start wird `~/Library/Application Support/Glasbox/einstellungen.json
 | `erlaubte_weiterleitungen` | Ziel-Domains, auf die ohne Rückfrage weitergeleitet werden darf |
 | `cpu_warnung_prozent` | ab welchem Ø-Verbrauch eine Seite als „hoher Verbrauch“ markiert wird |
 | `cpu_kerne`, `arbeitsspeicher_gb` | Obergrenze für den Container (schützt den Mac vor Minern) |
+| `aussehen` | optional: `design` (`auto`/`hell`/`dunkel`), `schrift` (`system`/`serif`/`mono`/`schmal`), `schriftgroesse` (12–20), `brave_groesse` (75/88/100/112/125/150) – am einfachsten über Aussehen → „Für einstellungen.json kopieren“ |
 
 ### Was beim Beenden gelöscht wird
 

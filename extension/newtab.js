@@ -166,7 +166,7 @@ async function zeigeAlles(config) {
 }
 
 async function zeigeDesign() {
-  const wahl = await wendeDesignAn(config.thema);
+  const wahl = await wendeDesignAn(config);
   for (const b of document.querySelectorAll('.design button')) {
     b.setAttribute('aria-pressed', String(b.dataset.design === wahl));
   }

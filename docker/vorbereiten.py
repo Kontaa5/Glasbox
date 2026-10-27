@@ -89,6 +89,15 @@ for b in roh.get("lesezeichen", []) if isinstance(roh.get("lesezeichen"), list) 
         else:
             print(f"übersprungen (keine http/https-URL): {b['url'][:80]}", file=sys.stderr)
 
+# Aussehen (optional): nur feste Werte, alles andere fällt auf den Standard zurück
+SCHRIFTEN = ("system", "serif", "mono", "schmal")
+GROESSEN = (75, 88, 100, 112, 125, 150)
+a = roh.get("aussehen") if isinstance(roh.get("aussehen"), dict) else {}
+design = a.get("design") if a.get("design") in ("auto", "hell", "dunkel") else "auto"
+schrift = a.get("schrift") if a.get("schrift") in SCHRIFTEN else "system"
+sg = a.get("schriftgroesse")
+schriftgroesse = sg if isinstance(sg, int) and not isinstance(sg, bool) and 12 <= sg <= 20 else 14
+
 cpu = zahl("cpu_kerne", 1, 64, 4)
 ram = zahl("arbeitsspeicher_gb", 2, 64, 6)
 erweiterung = {
@@ -98,7 +107,9 @@ erweiterung = {
     "cpu_warnung_prozent": zahl("cpu_warnung_prozent", 10, 100, 70),
     "cpu_limit": cpu,
     "labor": modus == "labor",
-    "thema": thema,
+    "thema": design if design != "auto" else thema,
+    "schrift": schrift,
+    "schriftgroesse": schriftgroesse,
 }
 json.dump({"3rdparty": {"extensions": {ext_id: erweiterung}}},
           open(os.path.join(laufzeit, "erweiterung.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)

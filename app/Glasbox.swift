@@ -121,12 +121,149 @@ final class StartController: NSWindowController {
     }
 }
 
+// MARK: - Aussehen (gilt bis zum Beenden; dauerhaft nur über einstellungen.json → "aussehen")
+
+/// Startwerte kommen aus einstellungen.json, Änderungen im Fenster „Aussehen“ gelten nur für die Sitzung.
+/// Die App schreibt die Datei nie selbst – sie erzeugt nur den Text zum Hineinkopieren.
+final class Aussehen {
+    static let designs = [("auto", "Automatisch (wie der Mac)"), ("hell", "Hell"), ("dunkel", "Dunkel")]
+    static let schriften = [("system", "System"), ("serif", "Serif"), ("mono", "Monospace"), ("schmal", "Schmal")]
+    static let schriftgroessen = Array(12...20)
+    static let braveGroessen = [75, 88, 100, 112, 125, 150]
+
+    var design = "auto"
+    var schrift = "system"
+    var schriftgroesse = 14
+    var braveGroesse = 100
+    /// Dashboard (Design/Schrift) bzw. Brave-Größe hat sich geändert
+    var dashboardGeaendert: (() -> Void)?
+    var braveGroesseGeaendert: (() -> Void)?
+
+    static var datei: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Glasbox/einstellungen.json")
+    }
+
+    /// Nur bekannte Werte übernehmen – alles andere bleibt beim Standard.
+    func ladeAusEinstellungen() {
+        guard let daten = try? Data(contentsOf: Self.datei),
+              let roh = try? JSONSerialization.jsonObject(with: daten) as? [String: Any],
+              let a = roh["aussehen"] as? [String: Any] else { return }
+        if let d = a["design"] as? String, Self.designs.contains(where: { $0.0 == d }) { design = d }
+        if let f = a["schrift"] as? String, Self.schriften.contains(where: { $0.0 == f }) { schrift = f }
+        if let g = a["schriftgroesse"] as? Int, Self.schriftgroessen.contains(g) { schriftgroesse = g }
+        if let b = a["brave_groesse"] as? Int, Self.braveGroessen.contains(b) { braveGroesse = b }
+    }
+
+    /// Text für einstellungen.json – nur aus den festen Werten oben gebaut.
+    var alsJson: String {
+        """
+        "aussehen": {
+          "design": "\(design)",
+          "schrift": "\(schrift)",
+          "schriftgroesse": \(schriftgroesse),
+          "brave_groesse": \(braveGroesse)
+        }
+        """
+    }
+}
+
+let aussehen = Aussehen()
+
+final class AussehenController: NSWindowController {
+    private let design = NSPopUpButton(), schrift = NSPopUpButton()
+    private let groesse = NSPopUpButton(), brave = NSPopUpButton()
+    private let vorschau = NSTextField(labelWithString: "")
+    private let kopiert = NSTextField(labelWithString: "")
+    /// Größen unter 100 % gehen nur auf Retina (normaler Monitor ist schon 1×)
+    var retina: () -> Bool = { true }
+
+    convenience init() {
+        let w = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 460, height: 420),
+                        styleMask: [.titled, .closable, .utilityWindow], backing: .buffered, defer: false)
+        w.title = "Aussehen"
+        self.init(window: w)
+        baue()
+        w.center()
+    }
+
+    private func zeile(_ titel: String, _ knopf: NSPopUpButton) -> NSStackView {
+        let l = NSTextField(labelWithString: titel)
+        l.alignment = .right
+        l.widthAnchor.constraint(equalToConstant: 110).isActive = true
+        knopf.target = self; knopf.action = #selector(geaendert)
+        let z = NSStackView(views: [l, knopf]); z.spacing = 10
+        return z
+    }
+
+    private func baue() {
+        for (_, t) in Aussehen.designs { design.addItem(withTitle: t) }
+        for (_, t) in Aussehen.schriften { schrift.addItem(withTitle: t) }
+        for g in Aussehen.schriftgroessen { groesse.addItem(withTitle: "\(g) px") }
+        brave.autoenablesItems = false
+        for b in Aussehen.braveGroessen { brave.addItem(withTitle: b == 100 ? "100 % (passend zum Bildschirm)" : "\(b) %") }
+
+        let dashTitel = NSTextField(labelWithString: "Dashboard"); dashTitel.font = .boldSystemFont(ofSize: 13)
+        let braveTitel = NSTextField(labelWithString: "Brave (Tabs, Adresszeile, Seite)"); braveTitel.font = .boldSystemFont(ofSize: 13)
+        let tipp = NSTextField(wrappingLabelWithString:
+            "Gilt bis zum Beenden. Für immer: kopieren und in einstellungen.json einfügen (Komma zum Eintrag davor nicht vergessen). Cmd+Plus/Minus zoomt nur die Seite.")
+        tipp.textColor = .secondaryLabelColor; tipp.preferredMaxLayoutWidth = 400
+        vorschau.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        vorschau.isSelectable = true
+        kopiert.textColor = .secondaryLabelColor
+        let kopieren = NSButton(title: "Für einstellungen.json kopieren", target: self, action: #selector(kopiere))
+        kopieren.keyEquivalent = "\r"
+        let ordner = NSButton(title: "Im Finder zeigen", target: self, action: #selector(zeigeDatei))
+        let knoepfe = NSStackView(views: [ordner, kopieren]); knoepfe.spacing = 10
+
+        let stapel = NSStackView(views: [dashTitel, zeile("Design", design), zeile("Schrift", schrift),
+                                         zeile("Schriftgröße", groesse), braveTitel, zeile("Größe", brave),
+                                         tipp, vorschau, knoepfe, kopiert])
+        stapel.orientation = .vertical; stapel.alignment = .leading; stapel.spacing = 10
+        stapel.edgeInsets = NSEdgeInsets(top: 20, left: 24, bottom: 20, right: 24)
+        stapel.setCustomSpacing(18, after: stapel.views[3])
+        window?.contentView = stapel
+    }
+
+    /// Anzeige an die aktuellen Werte anpassen
+    func aktualisiere() {
+        design.selectItem(at: Aussehen.designs.firstIndex { $0.0 == aussehen.design } ?? 0)
+        schrift.selectItem(at: Aussehen.schriften.firstIndex { $0.0 == aussehen.schrift } ?? 0)
+        groesse.selectItem(at: Aussehen.schriftgroessen.firstIndex(of: aussehen.schriftgroesse) ?? 2)
+        for (i, b) in Aussehen.braveGroessen.enumerated() { brave.item(at: i)?.isEnabled = b >= 100 || retina() }
+        brave.selectItem(at: Aussehen.braveGroessen.firstIndex(of: aussehen.braveGroesse) ?? 2)
+        vorschau.stringValue = aussehen.alsJson
+        kopiert.stringValue = ""
+    }
+
+    @objc private func geaendert(_ sender: NSPopUpButton) {
+        let i = max(0, sender.indexOfSelectedItem)
+        switch sender {
+        case design: aussehen.design = Aussehen.designs[i].0; aussehen.dashboardGeaendert?()
+        case schrift: aussehen.schrift = Aussehen.schriften[i].0; aussehen.dashboardGeaendert?()
+        case groesse: aussehen.schriftgroesse = Aussehen.schriftgroessen[i]; aussehen.dashboardGeaendert?()
+        default: aussehen.braveGroesse = Aussehen.braveGroessen[i]; aussehen.braveGroesseGeaendert?()
+        }
+        aktualisiere()
+    }
+
+    @objc private func kopiere() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(aussehen.alsJson, forType: .string)
+        kopiert.stringValue = "✓ Kopiert – jetzt in einstellungen.json einfügen und Glasbox neu starten."
+    }
+
+    @objc private func zeigeDatei() {
+        NSWorkspace.shared.activateFileViewerSelecting([Aussehen.datei])
+    }
+}
+
 // MARK: - Stream-Fenster (abgeriegelter WKWebView)
 
-/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R, Ctrl+Cmd+F,
+/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R/Komma, Ctrl+Cmd+F)
 /// gehen deshalb zuerst an die App, damit sie immer funktionieren. Cmd+Plus/Minus/0 gehen an Brave (Seiten-Zoom).
 final class StreamWebView: WKWebView {
-    private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r"]
+    private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r", ","]
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
@@ -177,7 +314,7 @@ final class StreamWebView: WKWebView {
     }
 }
 
-final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate, NSMenuItemValidation {
+final class StreamController: NSWindowController, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate {
     var schliessenGewuenscht: (() -> Void)?
     private(set) var webView: WKWebView!
 
@@ -247,40 +384,22 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     """
 
     // MARK: Brave-Größe (ganze Oberfläche im Container: Tabs, Adresszeile und Seite)
-    // Feste Einstellung im Menü Darstellung – Cmd+Plus/Minus zoomt nur die Seite (macht Brave selbst).
+    // Eingestellt im Fenster „Aussehen“ – Cmd+Plus/Minus zoomt nur die Seite (macht Brave selbst).
 
     /// Skalierung, die der Stream kennt (96 = 1×, 192 = 2×); Schritte zu 24.
     private static let stufenDpi = [96, 120, 144, 168, 192, 216, 240, 264, 288]
-    /// Wählbare Größen in Prozent von „passend zum Bildschirm“ (Retina 2×, sonst 1×).
-    static let groessen = [75, 88, 100, 112, 125, 150]
+    var istRetina: Bool { (window?.backingScaleFactor ?? 2) >= 1.5 }
 
-    /// Nur für diese Sitzung – beim nächsten Start wieder 100 % (nichts wird gespeichert).
-    private var braveGroesse = 100
-    private var basisDpi: Int { (window?.backingScaleFactor ?? 2) >= 1.5 ? 192 : 96 }
-
-    /// DPI für eine Größe – nächster Wert aus der Liste (unter 1× gibt es nicht).
+    /// DPI für eine Größe in Prozent von „passend zum Bildschirm“ – nächster Wert aus der Liste (unter 1× gibt es nicht).
     private func dpi(fuer prozent: Int) -> Int {
-        let ziel = Double(basisDpi * prozent) / 100
+        let ziel = Double((istRetina ? 192 : 96) * prozent) / 100
         return Self.stufenDpi.min { abs(Double($0) - ziel) < abs(Double($1) - ziel) }!
     }
 
     /// Gewünschte Skalierung an den Stream geben. Nur eine Zahl aus der festen Liste – keine fremden Daten.
-    private func wendeGroesseAn() {
+    func wendeGroesseAn() {
         webView.evaluateJavaScript(
-            "window.postMessage({type:'settings',settings:{scaling_dpi:\(dpi(fuer: braveGroesse))}},location.origin)")
-    }
-
-    @objc func braveGroesseGewaehlt(_ sender: NSMenuItem) {
-        guard let p = sender.representedObject as? Int, Self.groessen.contains(p) else { return }
-        braveGroesse = p
-        wendeGroesseAn()
-    }
-
-    // Häkchen bei der aktuellen Größe; Größen unter 1× (normaler Monitor) sind nicht möglich -> grau.
-    func validateMenuItem(_ item: NSMenuItem) -> Bool {
-        guard item.action == #selector(braveGroesseGewaehlt(_:)), let p = item.representedObject as? Int else { return true }
-        item.state = p == braveGroesse ? .on : .off
-        return p >= 100 || basisDpi > 96
+            "window.postMessage({type:'settings',settings:{scaling_dpi:\(dpi(fuer: aussehen.braveGroesse))}},location.origin)")
     }
 
     // Nach dem Laden (Stream braucht kurz bis zur Verbindung) und beim Wechsel Retina <-> normaler Monitor.
@@ -340,6 +459,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var beendetSich = false
 
     func applicationDidFinishLaunching(_ n: Notification) {
+        aussehen.ladeAusEinstellungen()
+        aussehen.dashboardGeaendert = { [weak self] in self?.gibThemaWeiter() }
+        aussehen.braveGroesseGeaendert = { [weak self] in self?.stream?.wendeGroesseAn() }
         baueMenue()
         // Hell/Dunkel am Mac umgeschaltet -> Dashboard im Container zieht mit
         DistributedNotificationCenter.default().addObserver(
@@ -398,21 +520,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Dashboard-Design nur für diese Sitzung: auto = wie der Mac, sonst hell/dunkel (nichts wird gespeichert).
-    private var design = "auto"
-
-    /// Gewähltes Design (bzw. bei „auto“ das Aussehen des Macs) ans Dashboard im Container geben.
+    /// Design (bei „auto“ das Aussehen des Macs), Schrift und Schriftgröße ans Dashboard im Container geben.
+    /// Nur feste Werte aus `Aussehen` – sb prüft sie nochmals.
     private func gibThemaWeiter() {
         let dunkel = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
-        let thema = design == "auto" ? (dunkel ? "dunkel" : "hell") : design
-        DispatchQueue.global().async { _ = Sb.ausfuehren(["thema", thema]) }
+        let thema = aussehen.design == "auto" ? (dunkel ? "dunkel" : "hell") : aussehen.design
+        let args = ["thema", thema, aussehen.schrift, String(aussehen.schriftgroesse)]
+        DispatchQueue.global().async { _ = Sb.ausfuehren(args) }
     }
 
-    @objc private func designGewaehlt(_ sender: NSMenuItem) {
-        guard let wahl = sender.representedObject as? String else { return }
-        design = wahl
-        sender.menu?.items.forEach { $0.state = ($0.representedObject as? String) == wahl ? .on : .off }
-        gibThemaWeiter()
+    private var aussehenFenster: AussehenController?
+
+    @objc private func zeigeAussehen(_ sender: Any?) {
+        let f = aussehenFenster ?? AussehenController()
+        f.retina = { [weak self] in self?.stream?.istRetina ?? true }
+        aussehenFenster = f
+        f.aktualisiere()
+        f.showWindow(nil)
     }
 
     private func zeigeStream(_ modus: String) {
@@ -486,28 +610,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ansicht = NSMenu(title: "Darstellung")
         ansicht.addItem(withTitle: "Neu verbinden", action: #selector(StreamController.neuLaden(_:)), keyEquivalent: "r")
         ansicht.addItem(.separator())
-        // Brave-Größe (Tabs, Adresszeile, Seite); Cmd+Plus/Minus/0 zoomt nur die Seite
-        let groesseItem = ansicht.addItem(withTitle: "Brave-Größe", action: nil, keyEquivalent: "")
-        let groesseMenue = NSMenu(title: "Brave-Größe")
-        for p in StreamController.groessen {
-            let i = groesseMenue.addItem(withTitle: p == 100 ? "100 % (passend zum Bildschirm)" : "\(p) %",
-                                         action: #selector(StreamController.braveGroesseGewaehlt(_:)), keyEquivalent: "")
-            i.representedObject = p
-        }
-        groesseItem.submenu = groesseMenue
+        // Aussehen: Dashboard-Design/Schrift und Brave-Größe (Cmd+Plus/Minus/0 zoomt nur die Seite)
+        let aussehenItem = ansicht.addItem(withTitle: "Aussehen …", action: #selector(zeigeAussehen(_:)), keyEquivalent: ",")
+        aussehenItem.target = self
         ansicht.addItem(.separator())
         let voll = ansicht.addItem(withTitle: "Vollbild", action: #selector(NSWindow.toggleFullScreen(_:)), keyEquivalent: "f")
         voll.keyEquivalentModifierMask = [.command, .control]
-        ansicht.addItem(.separator())
-        let designItem = ansicht.addItem(withTitle: "Dashboard-Design", action: nil, keyEquivalent: "")
-        let designMenue = NSMenu(title: "Dashboard-Design")
-        for (titel, wert) in [("Automatisch (wie der Mac)", "auto"), ("Hell", "hell"), ("Dunkel", "dunkel")] {
-            let i = designMenue.addItem(withTitle: titel, action: #selector(designGewaehlt(_:)), keyEquivalent: "")
-            i.target = self
-            i.representedObject = wert
-            i.state = wert == design ? .on : .off
-        }
-        designItem.submenu = designMenue
         ansichtItem.submenu = ansicht
 
         let fensterItem = NSMenuItem(); haupt.addItem(fensterItem)
