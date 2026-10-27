@@ -41,7 +41,7 @@ header {
 .einst { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .einst .groesse { display: flex; align-items: center; gap: 8px; color: var(--leise); }
 .einst select { background: var(--karte); color: var(--text); border: 1px solid var(--rand); border-radius: 8px; padding: 5px 8px; font-size: 0.929rem; }
-.mehr { color: var(--leise); font-size: 0.893rem; margin-left: auto; cursor: help; }
+.mehr { color: var(--leise); font-size: 0.893rem; margin-left: auto; }
 .einst input[type="range"] { accent-color: var(--akzent); }
 .design button[aria-pressed="true"] { background: var(--karte); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 #q {

@@ -235,6 +235,8 @@ chrome.downloads.onChanged.addListener(() => { if (config.labor) zeigeLaborDownl
 zeigeLesezeichen(config);
 zeigeAlles(config);
 $('ip-neu').addEventListener('click', () => ladeIp(config));
+// Beim Zurückwechseln auf das Dashboard sofort frische Werte zeigen
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') zeigeAlles(config); });
 $('perf-ok').addEventListener('click', () => chrome.runtime.sendMessage({ typ: 'warnungQuittieren' }));
 chrome.storage.onChanged.addListener(async (_, bereich) => {
   if (bereich === 'managed') {

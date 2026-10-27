@@ -34,12 +34,16 @@
   };
   anmelden();
 
-  setInterval(() => {
-    anmelden();
+  const tick = () => {
     const sichtbar = window === window.top && document.visibilityState === 'visible';
     if (!sichtbar && zaehler.worker === 0 && zaehler.wasm === 0) return;
     chrome.runtime.sendMessage({ typ: 'tick', sichtbar, ...zaehler }).catch(() => {});
     zaehler.worker = 0;
     zaehler.wasm = 0;
-  }, 2000);
+  };
+  // Sofort beim Laden und beim Zurückwechseln auf den Tab messen, danach alle 2 s
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tick, { once: true });
+  else tick();
+  document.addEventListener('visibilitychange', tick);
+  setInterval(() => { anmelden(); tick(); }, 2000);
 })();

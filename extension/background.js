@@ -80,10 +80,22 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => chrome.storage.session.remove('tab_' + tabId));
 
+// Seite sofort in „Leistung pro Seite“ eintragen, nicht erst nach der ersten CPU-Messung
+chrome.webNavigation.onCompleted.addListener((d) => {
+  if (d.frameId === 0 && istWebUrl(d.url)) aktualisierePerf(site(d.url), null, { worker: 0, wasm: 0 });
+});
+
 // ---------- CPU-Verbrauch pro Seite ----------
 
 let letzteMessung = null;
 let letzteMessungZeit = 0;
+// Startwert gleich beim Aufwachen holen – sonst liefert erst die zweite Messung einen Wert
+chrome.system.cpu.getInfo().then((info) => {
+  if (letzteMessung) return;
+  let belegt = 0, gesamt = 0;
+  for (const p of info.processors) { belegt += p.usage.user + p.usage.kernel; gesamt += p.usage.total; }
+  letzteMessung = { belegt, gesamt };
+}).catch(() => {});
 const kurzVerlauf = new Map(); // site -> letzte 3 Werte
 
 async function cpuProzent() {
@@ -104,7 +116,14 @@ async function cpuProzent() {
   return Math.min(100, Math.round((anteil * info.numOfProcessors / limit) * 100));
 }
 
-async function aktualisierePerf(seite, cpu, signale) {
+// Schreibzugriffe nacheinander (sonst überschreiben sich gleichzeitige Updates gegenseitig)
+let perfWarteschlange = Promise.resolve();
+function aktualisierePerf(seite, cpu, signale) {
+  perfWarteschlange = perfWarteschlange.then(() => perfSchreiben(seite, cpu, signale)).catch(() => {});
+  return perfWarteschlange;
+}
+
+async function perfSchreiben(seite, cpu, signale) {
   if (!seite || seite === '__proto__' || seite === 'constructor' || seite === 'prototype') return;
   const { perf = {} } = await chrome.storage.local.get('perf');
   // Seitenname kommt aus der URL – nie Objekt-Interna wie __proto__ als Schlüssel nutzen
@@ -147,8 +166,8 @@ chrome.runtime.onMessage.addListener((msg, sender, antwort) => {
     const signale = { worker: zahlAus(msg.worker), wasm: zahlAus(msg.wasm) };
     (async () => {
       let cpu = null;
-      // nur eine Messung je 4 s, nur für den sichtbaren Tab
-      if (msg.sichtbar === true && Date.now() - letzteMessungZeit > 4000) {
+      // höchstens eine Messung je 2 s, nur für den sichtbaren Tab
+      if (msg.sichtbar === true && Date.now() - letzteMessungZeit > 2000) {
         letzteMessungZeit = Date.now();
         cpu = await cpuProzent();
       }
