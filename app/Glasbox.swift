@@ -67,7 +67,7 @@ final class StartController: NSWindowController {
     private var knoepfe: [NSButton] = []
 
     convenience init() {
-        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 330),
                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
         w.title = "Glasbox"
         self.init(window: w)
@@ -92,7 +92,14 @@ final class StartController: NSWindowController {
 
         let knopfReihe = NSStackView(views: [labor, normal]); knopfReihe.spacing = 12
         let statusReihe = NSStackView(views: [rad, status]); statusReihe.spacing = 8
-        let stapel = NSStackView(views: [icon, titel, info, knopfReihe, statusReihe])
+        // Aussehen schon vor dem Start einstellen – dezent unter den Knöpfen
+        let aussehenKnopf = NSButton(title: "Aussehen …", image: NSImage(systemSymbolName: "gearshape",
+                                     accessibilityDescription: nil)!, target: self, action: #selector(zeigeEinstellungen))
+        aussehenKnopf.imagePosition = .imageLeading
+        aussehenKnopf.isBordered = false
+        aussehenKnopf.contentTintColor = .secondaryLabelColor
+        aussehenKnopf.toolTip = "Design, Schrift und Brave-Größe (⌘,)"
+        let stapel = NSStackView(views: [icon, titel, info, knopfReihe, statusReihe, aussehenKnopf])
         stapel.orientation = .vertical; stapel.alignment = .centerX; stapel.spacing = 14
         stapel.edgeInsets = NSEdgeInsets(top: 24, left: 28, bottom: 24, right: 28)
         icon.widthAnchor.constraint(equalToConstant: 72).isActive = true
@@ -100,17 +107,6 @@ final class StartController: NSWindowController {
         info.preferredMaxLayoutWidth = 380
         window?.contentView = stapel
 
-        // Zahnrad oben rechts: Aussehen schon vor dem Start einstellen
-        let zahnrad = NSButton(image: NSImage(systemSymbolName: "gearshape", accessibilityDescription: "Aussehen")!,
-                               target: self, action: #selector(zeigeEinstellungen))
-        zahnrad.isBordered = false
-        zahnrad.toolTip = "Aussehen (⌘,)"
-        zahnrad.translatesAutoresizingMaskIntoConstraints = false
-        stapel.addSubview(zahnrad)
-        NSLayoutConstraint.activate([
-            zahnrad.topAnchor.constraint(equalTo: stapel.topAnchor, constant: 12),
-            zahnrad.trailingAnchor.constraint(equalTo: stapel.trailingAnchor, constant: -12),
-        ])
     }
 
     @objc private func zeigeEinstellungen() { einstellungen?() }

@@ -152,6 +152,26 @@ async function perfSchreiben(seite, cpu, signale) {
   await chrome.storage.local.set({ perf: Object.fromEntries(eintraege.map((x) => [x.seite, x])) });
 }
 
+// ---------- Auffälligkeiten (Berechtigungen, Fingerprinting, Zwischenablage) ----------
+const AUFFAELLIG = {
+  'perm-kamera': 'Kamera/Mikrofon angefragt',
+  'perm-standort': 'Standort angefragt',
+  'perm-mitteilung': 'Benachrichtigungen angefragt',
+  'fp-canvas': 'Fingerprinting (Canvas)',
+  'fp-audio': 'Fingerprinting (Audio)',
+  'clip-schreiben': 'Zwischenablage beschrieben',
+};
+
+// Gleiche Seite + gleiche Art nur einmal pro Sitzung (sonst füllt eine Seite die Liste)
+let auffaelligWarteschlange = Promise.resolve();
+function merkeAuffaellig(seite, art) {
+  auffaelligWarteschlange = auffaelligWarteschlange.then(async () => {
+    const { auffaellig = [] } = await chrome.storage.local.get('auffaellig');
+    if (auffaellig.some((e) => e.seite === seite && e.art === art)) return;
+    await protokolliere('auffaellig', { seite, art });
+  }).catch(() => {});
+}
+
 function zahlAus(v) {
   return Number.isInteger(v) && v >= 0 && v < 10000 ? v : 0;
 }
@@ -173,6 +193,11 @@ chrome.runtime.onMessage.addListener((msg, sender, antwort) => {
       }
       await aktualisierePerf(seite, cpu, signale);
     })();
+    return;
+  }
+
+  if (msg.typ === 'auffaellig' && sender.tab && istWebUrl(sender.tab.url) && Object.hasOwn(AUFFAELLIG, msg.art)) {
+    merkeAuffaellig(site(sender.tab.url), AUFFAELLIG[msg.art]);
     return;
   }
 

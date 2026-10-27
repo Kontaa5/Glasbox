@@ -22,6 +22,8 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
 - **Werbe-, Tracker- und Cookie-Banner-Blocker** (Brave Shields), Cookie-Banner werden nie bestätigt.
 - **Weiterleitungs-Sperre** – schickt dich eine Seite ungefragt auf eine fremde Website,
   erscheint eine Sperrseite mit „Trotzdem öffnen“.
+- **Auffälligkeiten** – Seiten, die Kamera/Mikrofon, Standort oder Benachrichtigungen anfragen (alles gesperrt),
+  Fingerprinting versuchen (Canvas/Audio) oder in die Zwischenablage schreiben.
 - **Mining-Erkennung** – CPU-Verbrauch pro Seite, Worker-Zähler, Warnung bei hoher Last.
   Dazu ist WebAssembly komplett aus (darüber laufen fast alle Browser-Miner).
 - **Dashboard im neuen Tab**: deine aktuelle IP mit Anbieter und Ort (Warnung, wenn das VPN aus ist),

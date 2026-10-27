@@ -168,7 +168,7 @@ async function zeigeLaborDownloads() {
 }
 
 async function zeigeAlles(config) {
-  const d = await chrome.storage.local.get(['downloads', 'uploads', 'weiterleitungen', 'perf']);
+  const d = await chrome.storage.local.get(['downloads', 'uploads', 'weiterleitungen', 'perf', 'auffaellig']);
   if (config.labor) {
     await zeigeLaborDownloads();
   } else {
@@ -179,6 +179,8 @@ async function zeigeAlles(config) {
     (e) => e.seite + ' – ' + e.art, 'Keine Upload-Versuche ✓');
   fuelleListe('wl-liste', 'wl-zahl', d.weiterleitungen || [],
     (e) => kuerzen(e.von, 60) + ' → ' + kuerzen(e.nach, 60) + ' (' + e.art + ')', 'Keine ✓');
+  fuelleListe('af-liste', 'af-zahl', d.auffaellig || [],
+    (e) => kuerzen(e.seite, 60) + ' – ' + kuerzen(e.art, 60), 'Nichts Auffälliges ✓');
   zeigePerf(d.perf || {}, config);
 }
 

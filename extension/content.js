@@ -10,8 +10,15 @@
     chrome.runtime.sendMessage({ typ: 'upload', art }).catch(() => {});
   };
 
+  // Auffälligkeiten: je Art nur einmal pro Seite melden
+  const AUFFAELLIG = ['perm-kamera', 'perm-standort', 'perm-mitteilung', 'fp-canvas', 'fp-audio', 'clip-schreiben'];
+  const gemeldet = new Set();
+
   const beiSignal = (e) => {
-    if (e.detail === 'worker' || e.detail === 'wasm') {
+    if (AUFFAELLIG.includes(e.detail) && !gemeldet.has(e.detail)) {
+      gemeldet.add(e.detail);
+      chrome.runtime.sendMessage({ typ: 'auffaellig', art: e.detail }).catch(() => {});
+    } else if (e.detail === 'worker' || e.detail === 'wasm') {
       zaehler[e.detail] = Math.min(zaehler[e.detail] + 1, 9999);
     } else if (e.detail === 'filepicker') {
       upload('Datei-Picker (API)');
