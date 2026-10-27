@@ -105,7 +105,7 @@ final class StartController: NSWindowController {
 
     private func waehle(_ modus: String) {
         knoepfe.forEach { $0.isEnabled = false }
-        zeige("Startet … (beim ersten Mal kann es länger dauern)")
+        zeige("Startet …")
         gewaehlt?(modus)
     }
 

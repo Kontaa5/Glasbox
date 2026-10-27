@@ -67,6 +67,7 @@
   "AlwaysOpenPdfExternally": true,
   "BlockExternalExtensions": true,
   "BrowserGuestModeEnabled": false,
+  "IncognitoModeAvailability": 1,
   "BrowserAddPersonEnabled": false,
   "SitePerProcess": true,
   "XSLTEnabled": false,

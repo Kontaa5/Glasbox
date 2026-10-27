@@ -33,6 +33,7 @@ Nichts vom Mac kommt auf die Seiten, nichts von den Seiten kommt auf den Mac.
   oder Darstellung → Größer/Kleiner/Originalgröße – wird gespeichert. Am Anschlag (z. B. 1× auf einem
   normalen Monitor) zoomt Brave mit denselben Tasten die Seite.
 - **Fenster im Container bleibt fest** maximiert – Ziehen und Doppelklick auf die Tab-Leiste sind im Container gesperrt.
+  Immer nur ein Brave-Fenster: herausgezogene Tabs und Strg+N landen als Tab im Hauptfenster, Inkognito ist aus.
 - **Flüssiges Scrollen** mit Trackpad (pixelgenau) und Maus (Brave scrollt jede Raste weich).
 - **Mauszeiger blendet aus** nach 10 s ohne Bewegung (kommt bei Bewegung sofort zurück).
 - **VPN-Check beim Start**.

@@ -178,6 +178,31 @@ chrome.runtime.onMessage.addListener((msg, sender, antwort) => {
 
 chrome.action.onClicked.addListener(() => chrome.tabs.create({}));
 
+// ---------- Nur ein Fenster ----------
+// Ein herausgezogener Tab oder Strg+N öffnet sonst ein zweites Brave-Fenster im Container
+// (schließt man eines, liegt das andere dahinter). Neue normale Fenster wandern als Tabs ins erste.
+
+async function insHauptfenster(neu) {
+  if (neu.type !== 'normal') return;
+  for (let versuch = 0; versuch < 40; versuch++) {
+    const alle = await chrome.windows.getAll({ windowTypes: ['normal'], populate: true });
+    const fenster = alle.find((w) => w.id === neu.id);
+    const haupt = alle.filter((w) => w.id !== neu.id).sort((a, b) => a.id - b.id)[0];
+    if (!fenster || !haupt || !fenster.tabs.length) return;
+    try {
+      const ids = fenster.tabs.map((t) => t.id);
+      await chrome.tabs.move(ids, { windowId: haupt.id, index: -1 });
+      await chrome.tabs.update(ids[ids.length - 1], { active: true });
+      await chrome.windows.update(haupt.id, { focused: true });
+      return;
+    } catch {
+      // z. B. solange der Tab noch mit der Maus gezogen wird – kurz warten und nochmal
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
+}
+chrome.windows.onCreated.addListener(insHauptfenster);
+
 // Die Erweiterung wird kurz nach Browserstart per Richtlinie installiert –
 // der erste Tab zeigt bis dahin Braves eigene Startseite. Den ersetzen wir.
 chrome.runtime.onInstalled.addListener(async () => {
