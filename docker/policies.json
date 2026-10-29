@@ -64,7 +64,6 @@
     "*"
   ],
   "DefaultDirectSocketsSetting": 2,
-  "AlwaysOpenPdfExternally": false,
   "BlockExternalExtensions": true,
   "BrowserGuestModeEnabled": false,
   "IncognitoModeAvailability": 1,

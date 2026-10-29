@@ -114,12 +114,13 @@ erweiterung = {
 json.dump({"3rdparty": {"extensions": {ext_id: erweiterung}}},
           open(os.path.join(laufzeit, "erweiterung.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
-# Normal: keine Downloads, keine Dateiauswahl. Labor: beides – aber nur innerhalb des Containers.
+# Normal: keine Downloads, keine Dateiauswahl, keine PDF-Ansicht (PDFs gelten als Download -> gesperrt).
+# Labor: alles erlaubt – aber nur innerhalb des Containers; PDFs öffnen im eingebauten Betrachter.
 if modus == "labor":
-    regeln = {"DownloadRestrictions": 0, "AllowFileSelectionDialogs": True,
+    regeln = {"DownloadRestrictions": 0, "AllowFileSelectionDialogs": True, "AlwaysOpenPdfExternally": False,
               "DownloadDirectory": "/config/Downloads", "PromptForDownloadLocation": False}
 else:
-    regeln = {"DownloadRestrictions": 3, "AllowFileSelectionDialogs": False}
+    regeln = {"DownloadRestrictions": 3, "AllowFileSelectionDialogs": False, "AlwaysOpenPdfExternally": True}
 json.dump(regeln, open(os.path.join(laufzeit, "modus.json"), "w", encoding="utf-8"), indent=1)
 
 print(f"{cpu} {ram}")
