@@ -18,6 +18,7 @@
     "design": "auto",
     "schrift": "system",
     "schriftgroesse": 14,
-    "brave_groesse": 100
+    "brave_groesse": 100,
+    "scroll_tempo": 60
   }
 }

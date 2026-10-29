@@ -141,14 +141,17 @@ final class Aussehen {
     static let schriften = [("system", "System"), ("serif", "Serif"), ("mono", "Monospace"), ("schmal", "Schmal")]
     static let schriftgroessen = Array(12...20)
     static let braveGroessen = [75, 88, 100, 112, 125, 150]
+    static let scrollTempos = [25, 40, 60, 80, 100, 150]
 
     var design = "auto"
     var schrift = "system"
     var schriftgroesse = 14
     var braveGroesse = 100
+    var scrollTempo = 60
     /// Dashboard (Design/Schrift) bzw. Brave-Größe hat sich geändert
     var dashboardGeaendert: (() -> Void)?
     var braveGroesseGeaendert: (() -> Void)?
+    var scrollTempoGeaendert: (() -> Void)?
 
     static var datei: URL {
         FileManager.default.homeDirectoryForCurrentUser
@@ -164,6 +167,7 @@ final class Aussehen {
         if let f = a["schrift"] as? String, Self.schriften.contains(where: { $0.0 == f }) { schrift = f }
         if let g = a["schriftgroesse"] as? Int, Self.schriftgroessen.contains(g) { schriftgroesse = g }
         if let b = a["brave_groesse"] as? Int, Self.braveGroessen.contains(b) { braveGroesse = b }
+        if let t = a["scroll_tempo"] as? Int, Self.scrollTempos.contains(t) { scrollTempo = t }
     }
 
     /// Text für einstellungen.json – nur aus den festen Werten oben gebaut.
@@ -173,7 +177,8 @@ final class Aussehen {
           "design": "\(design)",
           "schrift": "\(schrift)",
           "schriftgroesse": \(schriftgroesse),
-          "brave_groesse": \(braveGroesse)
+          "brave_groesse": \(braveGroesse),
+          "scroll_tempo": \(scrollTempo)
         }
         """
     }
@@ -183,7 +188,7 @@ let aussehen = Aussehen()
 
 final class AussehenController: NSWindowController {
     private let design = NSPopUpButton(), schrift = NSPopUpButton()
-    private let groesse = NSPopUpButton(), brave = NSPopUpButton()
+    private let groesse = NSPopUpButton(), brave = NSPopUpButton(), tempo = NSPopUpButton()
     private let vorschau = NSTextField(labelWithString: "")
     private let kopiert = NSTextField(labelWithString: "")
     /// Größen unter 100 % gehen nur auf Retina (normaler Monitor ist schon 1×)
@@ -213,11 +218,12 @@ final class AussehenController: NSWindowController {
         for g in Aussehen.schriftgroessen { groesse.addItem(withTitle: "\(g) px") }
         brave.autoenablesItems = false
         for b in Aussehen.braveGroessen { brave.addItem(withTitle: b == 100 ? "100 % (passend zum Bildschirm)" : "\(b) %") }
+        for t in Aussehen.scrollTempos { tempo.addItem(withTitle: t == 60 ? "60 % (Standard)" : "\(t) %") }
 
         let dashTitel = NSTextField(labelWithString: "Dashboard"); dashTitel.font = .boldSystemFont(ofSize: 13)
-        let braveTitel = NSTextField(labelWithString: "Brave (Tabs, Adresszeile, Seite)"); braveTitel.font = .boldSystemFont(ofSize: 13)
+        let braveTitel = NSTextField(labelWithString: "Brave (Größe, Scrollen)"); braveTitel.font = .boldSystemFont(ofSize: 13)
         let tipp = NSTextField(wrappingLabelWithString:
-            "Gilt bis zum Beenden. Für immer: kopieren und in einstellungen.json einfügen (Komma zum Eintrag davor nicht vergessen). Cmd+Plus/Minus zoomt nur die Seite.")
+            "Gilt bis zum Beenden. Für immer: kopieren und in einstellungen.json einfügen (Komma zum Eintrag davor nicht vergessen). Cmd+Plus/Minus zoomt nur die Seite. Scroll-Tempo gilt fürs Trackpad.")
         tipp.textColor = .secondaryLabelColor; tipp.preferredMaxLayoutWidth = 400
         vorschau.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         vorschau.isSelectable = true
@@ -229,6 +235,7 @@ final class AussehenController: NSWindowController {
 
         let stapel = NSStackView(views: [dashTitel, zeile("Design", design), zeile("Schrift", schrift),
                                          zeile("Schriftgröße", groesse), braveTitel, zeile("Größe", brave),
+                                         zeile("Scroll-Tempo", tempo),
                                          tipp, vorschau, knoepfe, kopiert])
         stapel.orientation = .vertical; stapel.alignment = .leading; stapel.spacing = 10
         stapel.edgeInsets = NSEdgeInsets(top: 20, left: 24, bottom: 20, right: 24)
@@ -243,6 +250,7 @@ final class AussehenController: NSWindowController {
         groesse.selectItem(at: Aussehen.schriftgroessen.firstIndex(of: aussehen.schriftgroesse) ?? 2)
         for (i, b) in Aussehen.braveGroessen.enumerated() { brave.item(at: i)?.isEnabled = b >= 100 || retina() }
         brave.selectItem(at: Aussehen.braveGroessen.firstIndex(of: aussehen.braveGroesse) ?? 2)
+        tempo.selectItem(at: Aussehen.scrollTempos.firstIndex(of: aussehen.scrollTempo) ?? 2)
         vorschau.stringValue = aussehen.alsJson
         kopiert.stringValue = ""
     }
@@ -253,6 +261,7 @@ final class AussehenController: NSWindowController {
         case design: aussehen.design = Aussehen.designs[i].0; aussehen.dashboardGeaendert?()
         case schrift: aussehen.schrift = Aussehen.schriften[i].0; aussehen.dashboardGeaendert?()
         case groesse: aussehen.schriftgroesse = Aussehen.schriftgroessen[i]; aussehen.dashboardGeaendert?()
+        case tempo: aussehen.scrollTempo = Aussehen.scrollTempos[i]; aussehen.scrollTempoGeaendert?()
         default: aussehen.braveGroesse = Aussehen.braveGroessen[i]; aussehen.braveGroesseGeaendert?()
         }
         aktualisiere()
@@ -289,6 +298,9 @@ final class StreamWebView: WKWebView {
     // falsch einordnet. Die App gibt stattdessen echte Rasten (Zeilen-Ereignisse) an das Seitenskript;
     // Brave im Container scrollt jede Raste selbst weich (--enable-smooth-scrolling). Nur Zahlen.
     override func scrollWheel(with event: NSEvent) {
+        // Nachlauf von macOS nach dem Loslassen weglassen: Brave im Container schwingt selbst nach –
+        // sonst kommt der Schwung doppelt an und es scrollt viel zu weit.
+        if event.hasPreciseScrollingDeltas && !event.momentumPhase.isEmpty { return }
         let mods = event.modifierFlags.intersection([.control, .command, .option])
         guard !event.hasPreciseScrollingDeltas, mods.isEmpty else { return super.scrollWheel(with: event) }
         let raste = { (wert: CGFloat) -> Double in max(-20, min(20, Double(-wert))) }
@@ -356,19 +368,21 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         webView.load(URLRequest(url: adresse))
     }
 
+    // Trackpad: Bewegung × Scroll-Tempo, ganzzahlig weitergereicht.
     // Trackpad-Scrollen kommt in WebKit mit Kommazahlen an – der Stream hält das für Mausrad-Rasten
     // und scrollt ruckelig in Sprüngen. Ganzzahlig weitergereicht (Rest wird mitgezählt) scrollt
     // Brave pixelgenau. Mausrad: glasboxRaste (von StreamWebView) schickt echte Rasten.
     // Reines Seitenskript ohne Verbindung zur App; Pinch-Zoom (Ctrl) bleibt unverändert.
     static let fluessigScrollen = """
     (() => {
-      let restX = 0, restY = 0;
+      let restX = 0, restY = 0, tempo = 0.6;
+      // Scroll-Tempo fürs Trackpad (Fenster „Aussehen“); nur Zahlen zwischen 0,1 und 3
+      window.glasboxSetzeTempo = (t) => { if (Number.isFinite(t) && t >= 0.1 && t <= 3) tempo = t; };
       window.addEventListener('wheel', (e) => {
         if (!e.isTrusted || e.deltaMode !== 0 || e.ctrlKey) return;
-        if (Number.isInteger(e.deltaX) && Number.isInteger(e.deltaY)) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        restX += e.deltaX; restY += e.deltaY;
+        restX += e.deltaX * tempo; restY += e.deltaY * tempo;
         const dx = Math.trunc(restX), dy = Math.trunc(restY);
         restX -= dx; restY -= dy;
         if (!dx && !dy) return;
@@ -416,7 +430,9 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     // Nach dem Laden (Stream braucht kurz bis zur Verbindung) und beim Wechsel Retina <-> normaler Monitor.
     func webView(_ v: WKWebView, didFinish n: WKNavigation!) {
         for verzoegerung in [1.0, 4.0] {
-            DispatchQueue.main.asyncAfter(deadline: .now() + verzoegerung) { [weak self] in self?.wendeGroesseAn() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + verzoegerung) { [weak self] in
+                self?.wendeGroesseAn(); self?.wendeScrollTempoAn()
+            }
         }
     }
 
@@ -458,6 +474,11 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
         return false
     }
 
+    /// Scroll-Tempo ans Seitenskript geben – nur eine Zahl aus der festen Liste.
+    func wendeScrollTempoAn() {
+        webView.evaluateJavaScript("window.glasboxSetzeTempo && window.glasboxSetzeTempo(\(Double(aussehen.scrollTempo) / 100))")
+    }
+
     @objc func neuLaden(_ sender: Any?) { webView.load(URLRequest(url: adresse)) }
 }
 
@@ -473,6 +494,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         aussehen.ladeAusEinstellungen()
         aussehen.dashboardGeaendert = { [weak self] in self?.gibThemaWeiter() }
         aussehen.braveGroesseGeaendert = { [weak self] in self?.stream?.wendeGroesseAn() }
+        aussehen.scrollTempoGeaendert = { [weak self] in self?.stream?.wendeScrollTempoAn() }
         baueMenue()
         // Hell/Dunkel am Mac umgeschaltet -> Dashboard im Container zieht mit
         DistributedNotificationCenter.default().addObserver(
