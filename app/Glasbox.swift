@@ -141,13 +141,13 @@ final class Aussehen {
     static let schriften = [("system", "System"), ("serif", "Serif"), ("mono", "Monospace"), ("schmal", "Schmal")]
     static let schriftgroessen = Array(12...20)
     static let braveGroessen = [75, 88, 100, 112, 125, 150]
-    static let scrollTempos = [25, 40, 60, 80, 100, 150]
+    static let scrollTempos = [15, 25, 40, 60, 80, 100]
 
     var design = "auto"
     var schrift = "system"
     var schriftgroesse = 14
     var braveGroesse = 100
-    var scrollTempo = 60
+    var scrollTempo = 40
     /// Dashboard (Design/Schrift) bzw. Brave-Größe hat sich geändert
     var dashboardGeaendert: (() -> Void)?
     var braveGroesseGeaendert: (() -> Void)?
@@ -218,7 +218,7 @@ final class AussehenController: NSWindowController {
         for g in Aussehen.schriftgroessen { groesse.addItem(withTitle: "\(g) px") }
         brave.autoenablesItems = false
         for b in Aussehen.braveGroessen { brave.addItem(withTitle: b == 100 ? "100 % (passend zum Bildschirm)" : "\(b) %") }
-        for t in Aussehen.scrollTempos { tempo.addItem(withTitle: t == 60 ? "60 % (Standard)" : "\(t) %") }
+        for t in Aussehen.scrollTempos { tempo.addItem(withTitle: t == 40 ? "40 % (Standard)" : "\(t) %") }
 
         let dashTitel = NSTextField(labelWithString: "Dashboard"); dashTitel.font = .boldSystemFont(ofSize: 13)
         let braveTitel = NSTextField(labelWithString: "Brave (Größe, Scrollen)"); braveTitel.font = .boldSystemFont(ofSize: 13)
@@ -375,7 +375,7 @@ final class StreamController: NSWindowController, NSWindowDelegate, WKNavigation
     // Reines Seitenskript ohne Verbindung zur App; Pinch-Zoom (Ctrl) bleibt unverändert.
     static let fluessigScrollen = """
     (() => {
-      let restX = 0, restY = 0, tempo = 0.6;
+      let restX = 0, restY = 0, tempo = 0.4;
       // Scroll-Tempo fürs Trackpad (Fenster „Aussehen“); nur Zahlen zwischen 0,1 und 3
       window.glasboxSetzeTempo = (t) => { if (Number.isFinite(t) && t >= 0.1 && t <= 3) tempo = t; };
       window.addEventListener('wheel', (e) => {

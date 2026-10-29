@@ -109,7 +109,7 @@ Beim ersten Start wird `~/Library/Application Support/Glasbox/einstellungen.json
 | `erlaubte_weiterleitungen` | Ziel-Domains, auf die ohne Rückfrage weitergeleitet werden darf |
 | `cpu_warnung_prozent` | ab welchem Ø-Verbrauch eine Seite als „hoher Verbrauch“ markiert wird |
 | `cpu_kerne`, `arbeitsspeicher_gb` | Obergrenze für den Container (schützt den Mac vor Minern) |
-| `aussehen` | optional: `design` (`auto`/`hell`/`dunkel`), `schrift` (`system`/`serif`/`mono`/`schmal`), `schriftgroesse` (12–20), `brave_groesse` (75/88/100/112/125/150), `scroll_tempo` (25/40/60/80/100/150, Trackpad) – am einfachsten über Aussehen → „Für einstellungen.json kopieren“ |
+| `aussehen` | optional: `design` (`auto`/`hell`/`dunkel`), `schrift` (`system`/`serif`/`mono`/`schmal`), `schriftgroesse` (12–20), `brave_groesse` (75/88/100/112/125/150), `scroll_tempo` (15/25/40/60/80/100, Trackpad) – am einfachsten über Aussehen → „Für einstellungen.json kopieren“ |
 
 ### Was beim Beenden gelöscht wird
 
