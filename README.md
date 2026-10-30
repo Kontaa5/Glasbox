@@ -73,7 +73,7 @@ nichts ist bei zwei Installationen gleich.
 ```
 
 **Glasbox.app** fragt beim Start: **Normal** oder **Labor**. Läuft Glasbox schon, öffnet sich direkt
-das Fenster. Schließen (oder Cmd+Q) fragt: **Beenden + alles löschen** (Standard – braucht danach keine
+das Fenster. Cmd+W schließt nur den Tab. Schließen (roter Knopf oder Cmd+Q) fragt: **Beenden + alles löschen** (Standard – braucht danach keine
 Leistung mehr) oder **im Hintergrund weiterlaufen**. Hängt das Bild: **Cmd+R** verbindet neu.
 Fragen (VPN, Updates) kommen als Dialog.
 

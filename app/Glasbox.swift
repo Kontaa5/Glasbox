@@ -280,10 +280,11 @@ final class AussehenController: NSWindowController {
 
 // MARK: - Stream-Fenster (abgeriegelter WKWebView)
 
-/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/W/H/M/R/Komma, Ctrl+Cmd+F)
-/// gehen deshalb zuerst an die App, damit sie immer funktionieren. Cmd+Plus/Minus/0 gehen an Brave (Seiten-Zoom).
+/// Der Stream fängt alle Tasten für den Container ab – App-Kürzel (Cmd+Q/H/M/R/Komma, Ctrl+Cmd+F)
+/// gehen deshalb zuerst an die App, damit sie immer funktionieren. Cmd+W (Tab schließen) und
+/// Cmd+Plus/Minus/0 (Seiten-Zoom) gehen an Brave.
 final class StreamWebView: WKWebView {
-    private static let appKuerzel: Set<String> = ["q", "w", "h", "m", "r", ","]
+    private static let appKuerzel: Set<String> = ["q", "h", "m", "r", ","]
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
@@ -655,7 +656,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let fensterItem = NSMenuItem(); haupt.addItem(fensterItem)
         let fenster = NSMenu(title: "Fenster")
         fenster.addItem(withTitle: "Minimieren", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
-        fenster.addItem(withTitle: "Schließen", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        // Ohne Cmd+W: das schließt in Brave den Tab. Glasbox beenden: Cmd+Q oder roter Knopf.
+        fenster.addItem(withTitle: "Schließen", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "")
         fensterItem.submenu = fenster
         NSApp.windowsMenu = fenster
         NSApp.mainMenu = haupt
