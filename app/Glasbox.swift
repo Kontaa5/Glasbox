@@ -22,8 +22,13 @@ enum Sb {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: "/bin/bash")
         p.arguments = [pfad] + args
-        var env = ProcessInfo.processInfo.environment
-        env["PATH"] = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        // Nur eine feste, kleine Umgebung weitergeben: nichts wie BASH_ENV, SHELLOPTS oder
+        // exportierte Funktionen kann so Code in sb einschleusen.
+        let geerbt = ProcessInfo.processInfo.environment
+        var env = ["PATH": "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+                   "HOME": FileManager.default.homeDirectoryForCurrentUser.path,
+                   "LANG": "en_US.UTF-8"]
+        for k in ["USER", "LOGNAME", "TMPDIR"] { if let v = geerbt[k] { env[k] = v } }
         p.environment = env
         p.standardInput = FileHandle.nullDevice
         let rohr = Pipe()
@@ -37,11 +42,21 @@ enum Sb {
         return (p.terminationStatus, text)
     }
 
+    private static let logSperre = NSLock()
+
     static func protokolliere(_ text: String) {
-        let ordner = FileManager.default.homeDirectoryForCurrentUser
+        logSperre.lock(); defer { logSperre.unlock() }   // sb läuft oft parallel (Thema, Start …)
+        let fm = FileManager.default
+        let ordner = fm.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Glasbox", isDirectory: true)
-        try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
+        try? fm.createDirectory(at: ordner, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let datei = ordner.appendingPathComponent("app.log")
+        // Größe begrenzen: ab 1 MB wird das alte Log zu app.log.1 (ein älteres fällt weg)
+        if let g = (try? fm.attributesOfItem(atPath: datei.path))?[.size] as? Int, g > 1_000_000 {
+            let alt = ordner.appendingPathComponent("app.log.1")
+            try? fm.removeItem(at: alt)
+            try? fm.moveItem(at: datei, to: alt)
+        }
         if let h = try? FileHandle(forWritingTo: datei) {
             h.seekToEndOfFile(); h.write(Data(text.utf8)); try? h.close()
         } else {
@@ -602,8 +617,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stream?.window?.title = "Glasbox – wird beendet …"
         stream?.webView.loadHTMLString("<body style='background:#0f1115;color:#8b92a0;font:15px system-ui;display:grid;place-items:center;height:90vh'>Glasbox wird beendet und gelöscht …</body>", baseURL: nil)
         DispatchQueue.global().async {
-            _ = Sb.ausfuehren(["stop"])
-            DispatchQueue.main.async { self.beendetSich = true; NSApp.terminate(nil) }
+            let (code, aus) = Sb.ausfuehren(["stop"])
+            DispatchQueue.main.async {
+                if code == 0 { self.beendetSich = true; NSApp.terminate(nil); return }
+                // Nicht still beenden: sonst läuft der Container weiter, obwohl „gelöscht“ versprochen war.
+                let a = NSAlert()
+                a.alertStyle = .critical
+                a.messageText = "Glasbox konnte nicht gelöscht werden"
+                a.informativeText = Sb.letzteZeile(aus) + "\n\nDer Container läuft evtl. noch."
+                a.addButton(withTitle: "Erneut versuchen")
+                a.addButton(withTitle: "Trotzdem schließen")
+                if a.runModal() == .alertFirstButtonReturn {
+                    self.beendeGlasbox()
+                } else {
+                    self.beendetSich = true; NSApp.terminate(nil)
+                }
+            }
         }
     }
 

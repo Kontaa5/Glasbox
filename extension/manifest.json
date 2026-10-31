@@ -8,6 +8,8 @@
     "storage",
     "downloads",
     "webNavigation",
+    "webRequest",
+    "webRequestBlocking",
     "tabs",
     "bookmarks",
     "system.cpu"

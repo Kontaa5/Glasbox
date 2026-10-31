@@ -119,5 +119,6 @@ Container-Härtung + Firewall · Selkies-Härtung · nginx-Host-Check · Brave-P
 Weiterleitungs-Sperre · Mining-/CPU-Erkennung · Auffälligkeiten (Berechtigungen, Fingerprinting, Zwischenablage) ·
 Fenster fest (labwc + gschema + Wächter) · nur ein Fenster, Inkognito aus · Zoom nur Seite, Brave-Größe über ⌘, ·
 Aussehen nur für die Sitzung + Snippet · Dashboard-Redesign (100vh, Lesezeichen-Kacheln, IP-Karte) ·
-Cursor-Ausblenden · weiches Scrollen + Tempo · PDF nur im Labor · Cmd+W = Tab schließen.
+Cursor-Ausblenden · weiches Scrollen + Tempo · PDF nur im Labor · Cmd+W = Tab schließen ·
+Server-Weiterleitungen vor dem Laden gestoppt (webRequestBlocking) · Beenden prüft Löschen · Reste-Container weg.
 Details: `git log`.

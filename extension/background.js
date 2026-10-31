@@ -1,19 +1,31 @@
 import { site, istWebUrl, ladeConfig, kuerzen } from './lib.js';
 
 const MAX_EINTRAEGE = 200;
+// configJetzt: dieselbe Config synchron (für die blockierende Weiterleitungs-Prüfung), null bis geladen
+let configJetzt = null;
 let configPromise = ladeConfig();
+configPromise.then((c) => { configJetzt = c; });
 // Richtlinien (Managed Storage) kommen evtl. erst nach dem Start an
 chrome.storage.onChanged.addListener((_, bereich) => {
-  if (bereich === 'managed') configPromise = ladeConfig();
+  if (bereich !== 'managed') return;
+  configPromise = ladeConfig();
+  configPromise.then((c) => { configJetzt = c; });
 });
 
 // ---------- Protokoll (chrome.storage.local, lebt nur so lange wie der Container) ----------
 
-async function protokolliere(schluessel, eintrag) {
+async function protokolliereJetzt(schluessel, eintrag) {
   const daten = await chrome.storage.local.get(schluessel);
   const liste = daten[schluessel] || [];
   liste.unshift({ zeit: Date.now(), ...eintrag });
   await chrome.storage.local.set({ [schluessel]: liste.slice(0, MAX_EINTRAEGE) });
+}
+
+// Schreibzugriffe nacheinander – sonst geht bei zwei gleichzeitigen Einträgen einer verloren
+let protokollWarteschlange = Promise.resolve();
+function protokolliere(schluessel, eintrag) {
+  protokollWarteschlange = protokollWarteschlange.then(() => protokolliereJetzt(schluessel, eintrag)).catch(() => {});
+  return protokollWarteschlange;
 }
 
 // ---------- Downloads: normal per Richtlinie gesperrt, hier zusätzlich abbrechen + mitschreiben.
@@ -34,13 +46,41 @@ chrome.downloads.onCreated.addListener(async (item) => {
 
 // ---------- Weiterleitungen auf fremde Seiten blockieren ----------
 
-// tabId -> { url: zuletzt bestätigte URL, angefragt: URL beim Start der Navigation, erlauben: bool }
+// tabId -> { url: zuletzt bestätigte URL, angefragt: URL beim Start der Navigation,
+//            erlauben: Seite, die nach „Trotzdem öffnen“ genau einmal erreicht werden darf }
 async function tabZustand(tabId) {
   const key = 'tab_' + tabId;
   return (await chrome.storage.session.get(key))[key] || {};
 }
 async function setzeTabZustand(tabId, z) {
   await chrome.storage.session.set({ ['tab_' + tabId]: z });
+}
+
+function sperre(tabId, vonUrl, nachUrl, art) {
+  protokolliere('weiterleitungen', { von: kuerzen(vonUrl, 300), nach: kuerzen(nachUrl, 300), art });
+  const ziel = chrome.runtime.getURL('blocked.html') + '#' +
+    encodeURIComponent(JSON.stringify({ von: vonUrl, nach: nachUrl }));
+  return setzeTabZustand(tabId, { url: vonUrl }).then(() => chrome.tabs.update(tabId, { url: ziel }));
+}
+
+// Server-Weiterleitung (3xx) schon VOR dem Laden der Zielseite stoppen – deren Code läuft so nie.
+// Blockierend geht nur synchron (Erweiterung ist per Richtlinie installiert, daher erlaubt).
+// Ist die Config noch nicht geladen (Hintergrund gerade aufgewacht), prüft onCommitted unten wie bisher.
+try {
+  chrome.webRequest.onHeadersReceived.addListener((d) => {
+    if (d.type !== 'main_frame' || d.tabId < 0 || d.statusCode < 300 || d.statusCode > 399 || !configJetzt) return;
+    const ort = (d.responseHeaders || []).find((h) => h.name.toLowerCase() === 'location');
+    if (!ort || typeof ort.value !== 'string') return;
+    let nachUrl;
+    try { nachUrl = new URL(ort.value, d.url).href; } catch { return; }
+    if (!istWebUrl(nachUrl) || !istWebUrl(d.url)) return;
+    const von = site(d.url), nach = site(nachUrl);
+    if (!von || !nach || von === nach || configJetzt.erlaubte_weiterleitungen.includes(nach)) return;
+    sperre(d.tabId, d.url, nachUrl, 'Server, vor dem Laden gestoppt').catch(() => {});
+    return { cancel: true };
+  }, { urls: ['http://*/*', 'https://*/*'], types: ['main_frame'] }, ['blocking', 'responseHeaders']);
+} catch (e) {
+  console.warn('Glasbox: Weiterleitungen nur nach dem Laden prüfbar', e);
 }
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (d) => {
@@ -61,18 +101,11 @@ chrome.webNavigation.onCommitted.addListener(async (d) => {
   const von = vonUrl && istWebUrl(vonUrl) ? site(vonUrl) : '';
   const nach = site(d.url);
   const config = await configPromise;
-  const erlaubt = z.erlauben || config.erlaubte_weiterleitungen.includes(nach);
+  // „Trotzdem öffnen“ gilt nur für genau die angezeigte Zielseite, nicht für weitere Sprünge danach
+  const erlaubt = z.erlauben === nach || config.erlaubte_weiterleitungen.includes(nach);
 
   if ((serverWeiterleitung || clientWeiterleitung) && von && nach && von !== nach && !erlaubt) {
-    await protokolliere('weiterleitungen', {
-      von: kuerzen(vonUrl, 300),
-      nach: kuerzen(d.url, 300),
-      art: serverWeiterleitung ? 'Server' : 'Seite (JavaScript/Meta)',
-    });
-    await setzeTabZustand(d.tabId, { url: vonUrl });
-    const ziel = chrome.runtime.getURL('blocked.html') + '#' +
-      encodeURIComponent(JSON.stringify({ von: vonUrl, nach: d.url }));
-    await chrome.tabs.update(d.tabId, { url: ziel });
+    await sperre(d.tabId, vonUrl, d.url, serverWeiterleitung ? 'Server' : 'Seite (JavaScript/Meta)');
     return;
   }
   await setzeTabZustand(d.tabId, { url: d.url });
@@ -210,8 +243,9 @@ chrome.runtime.onMessage.addListener((msg, sender, antwort) => {
   // Nur eigene Seiten (Neuer Tab, Sperrseite) dürfen steuern
   if (!vonErweiterung) return;
 
-  if (msg.typ === 'einmalErlauben' && sender.tab) {
-    tabZustand(sender.tab.id).then((z) => setzeTabZustand(sender.tab.id, { ...z, erlauben: true })).then(() => antwort(true));
+  if (msg.typ === 'einmalErlauben' && sender.tab && istWebUrl(msg.nach)) {
+    const erlauben = site(msg.nach);
+    tabZustand(sender.tab.id).then((z) => setzeTabZustand(sender.tab.id, { ...z, erlauben })).then(() => antwort(true));
     return true;
   }
   if (msg.typ === 'warnungQuittieren') {

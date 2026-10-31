@@ -91,7 +91,6 @@ for b in roh.get("lesezeichen", []) if isinstance(roh.get("lesezeichen"), list) 
 
 # Aussehen (optional): nur feste Werte, alles andere fällt auf den Standard zurück
 SCHRIFTEN = ("system", "serif", "mono", "schmal")
-GROESSEN = (75, 88, 100, 112, 125, 150)
 a = roh.get("aussehen") if isinstance(roh.get("aussehen"), dict) else {}
 design = a.get("design") if a.get("design") in ("auto", "hell", "dunkel") else "auto"
 schrift = a.get("schrift") if a.get("schrift") in SCHRIFTEN else "system"

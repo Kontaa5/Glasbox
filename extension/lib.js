@@ -3,7 +3,11 @@
 const ZWEISTUFIGE_TLDS = new Set([
   'co.uk', 'org.uk', 'ac.uk', 'gov.uk', 'co.at', 'or.at', 'gv.at', 'ac.at',
   'com.au', 'net.au', 'org.au', 'co.nz', 'co.jp', 'com.br', 'com.cn', 'com.tr',
-  'co.in', 'co.za', 'com.mx', 'com.ar', 'github.io', 'pages.dev', 'vercel.app',
+  'co.in', 'co.za', 'com.mx', 'com.ar', 'co.kr', 'co.il', 'com.sg', 'com.hk', 'com.tw', 'ne.jp', 'or.jp',
+  // Hosting-Dienste: jede Unterseite gehört jemand anderem
+  'github.io', 'gitlab.io', 'pages.dev', 'workers.dev', 'r2.dev', 'vercel.app', 'netlify.app', 'web.app',
+  'firebaseapp.com', 'herokuapp.com', 'blogspot.com', 'appspot.com', 'azurewebsites.net', 'cloudfront.net',
+  'onrender.com', 'fly.dev', 'glitch.me', 'ngrok.io', 'ngrok-free.app', 'repl.co', 'surge.sh',
 ]);
 
 // Grobe „Seite“ (eTLD+1) einer URL, z. B. https://a.b.example.co.at/x -> example.co.at

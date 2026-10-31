@@ -21,6 +21,6 @@ document.getElementById('neu').addEventListener('click', () => {
 const trotzdem = document.getElementById('trotzdem');
 if (!nach) trotzdem.disabled = true;
 trotzdem.addEventListener('click', async () => {
-  await chrome.runtime.sendMessage({ typ: 'einmalErlauben' });
+  await chrome.runtime.sendMessage({ typ: 'einmalErlauben', nach });
   location.href = nach;
 });

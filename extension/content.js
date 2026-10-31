@@ -1,4 +1,4 @@
-// Isolierter Kontext: sammelt Signale, meldet Upload-Versuche, schickt alle 5 s einen „Tick“
+// Isolierter Kontext: sammelt Signale, meldet Upload-Versuche, schickt alle 2 s einen „Tick“
 // (der Hintergrund misst dann den CPU-Verbrauch und ordnet ihn dieser Seite zu).
 (() => {
   const zaehler = { worker: 0, wasm: 0 };

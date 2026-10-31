@@ -96,6 +96,15 @@ PY
 
 laeuft() { [ "$(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null)" = "true" ]; }
 
+# Übrig gebliebener, gestoppter Container (z. B. nach Absturz von OrbStack, dann greift --rm nicht):
+# samt seinem Speicher-Volume löschen. Sonst scheitert der nächste Start am belegten Namen.
+reste_loeschen() {
+  docker container inspect "$NAME" >/dev/null 2>&1 || return 0
+  laeuft && return 0
+  docker rm -fv "$NAME" >/dev/null
+  gelb "Übrig gebliebenen Glasbox-Container gelöscht"
+}
+
 vpn_check() {
   local iface
   iface=$(route -n get default 2>/dev/null | awk '/interface:/ {print $2}')
@@ -238,6 +247,7 @@ start() {
   tz=$(readlink /etc/localtime | sed 's#.*/zoneinfo/##')
   [[ "$tz" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$ ]] || tz=UTC
 
+  reste_loeschen
   docker run -d --rm --name "$NAME" --hostname "$NAME" \
     -p "127.0.0.1:${PORT}:3000" \
     --label glasbox.modus="$modus" \
@@ -277,7 +287,7 @@ start() {
 
 stop() {
   docker_bereit
-  if ! laeuft; then echo "Läuft nicht."; return; fi
+  if ! laeuft; then reste_loeschen; echo "Läuft nicht."; return; fi
   local n
   n=$(docker exec "$NAME" sh -c 'find /config -path /config/.config -prune -o -type f \( -path "*/Downloads/*" -o -path "*/Desktop/*" \) -print 2>/dev/null | wc -l' || echo "?")
   echo "Dateien in Downloads/Desktop des Containers: ${n// /} (werden jetzt gelöscht)"
